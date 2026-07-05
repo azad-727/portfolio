@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Singh Azad Mukesh — Full-Stack Developer, Problem Solver & Innovation Architect. Turning real-world problems into digital solutions.">
+    <meta name="keywords" content="Singh Azad Mukesh, Full Stack Developer, Java Developer, JavaScript, Portfolio, Problem Solver">
+    <meta name="author" content="Singh Azad Mukesh">
+    <meta property="og:title" content="Singh Azad Mukesh — Developer Portfolio">
+    <meta property="og:description" content="Full-Stack Developer turning real-world problems into digital solutions.">
+    <meta property="og:type" content="website">
+    <meta name="theme-color" content="#1A1A1A">
+    <title>Singh Azad Mukesh — Developer Portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- TensorFlow.js and HandPose Model -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/handpose"></script>
+</head>
+<body>
+    <!-- Side Mountains (Background Sketch) -->
+    <div class="side-mountains side-mountains--left">
+        <svg viewBox="0 0 100 1000" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,0 L30,80 L15,140 L50,280 L35,350 L60,480 L40,560 L75,700 L45,820 L80,1000 L0,1000 Z" fill="var(--color-bg-subtle)" stroke="var(--color-border-light)" stroke-width="2"/>
+            <path d="M0,40 L45,150 L25,240 L70,400 L45,500 L85,650 L55,780 L95,1000 L0,1000 Z" fill="var(--color-bg-alt)" stroke="var(--color-border-light)" stroke-width="1.5"/>
+            <!-- Inner jagged details (hand-drawn feel) -->
+            <path d="M30,80 L40,160 M15,140 L25,220 M50,280 L65,390 M35,350 L45,430 M60,480 L75,590 M75,700 L90,830 M45,820 L60,940" stroke="var(--color-text-muted)" fill="none" stroke-width="1.5" opacity="0.4"/>
+            <path d="M10,30 L20,100 M45,150 L55,250 M25,240 L35,340 M70,400 L80,510 M85,650 L95,760" stroke="var(--color-text-muted)" fill="none" stroke-width="1" opacity="0.2"/>
+            <!-- Extra Background Sketches (Birds & Clouds) -->
+            <path d="M60,100 Q65,95 70,100 Q75,95 80,100" stroke="var(--color-text-muted)" fill="none" stroke-width="1.5" opacity="0.6"/>
+            <path d="M75,115 Q80,110 85,115 Q90,110 95,115" stroke="var(--color-text-muted)" fill="none" stroke-width="1" opacity="0.4"/>
+            <path d="M50,420 Q55,415 60,420 Q65,415 70,420" stroke="var(--color-text-muted)" fill="none" stroke-width="1.2" opacity="0.5"/>
+            <circle cx="85" cy="70" r="12" fill="none" stroke="var(--color-text-muted)" stroke-width="1" opacity="0.3"/>
+            <path d="M80,70 L90,70 M85,65 L85,75" stroke="var(--color-text-muted)" fill="none" stroke-width="1" opacity="0.2"/>
+        </svg>
+    </div>
+    <div class="side-mountains side-mountains--right">
+        <svg viewBox="0 0 100 1000" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,0 L30,80 L15,140 L50,280 L35,350 L60,480 L40,560 L75,700 L45,820 L80,1000 L0,1000 Z" fill="var(--color-bg-subtle)" stroke="var(--color-border-light)" stroke-width="2"/>
+            <path d="M0,40 L45,150 L25,240 L70,400 L45,500 L85,650 L55,780 L95,1000 L0,1000 Z" fill="var(--color-bg-alt)" stroke="var(--color-border-light)" stroke-width="1.5"/>
+            <path d="M30,80 L40,160 M15,140 L25,220 M50,280 L65,390 M35,350 L45,430 M60,480 L75,590 M75,700 L90,830 M45,820 L60,940" stroke="var(--color-text-muted)" fill="none" stroke-width="1.5" opacity="0.4"/>
+            <path d="M10,30 L20,100 M45,150 L55,250 M25,240 L35,340 M70,400 L80,510 M85,650 L95,760" stroke="var(--color-text-muted)" fill="none" stroke-width="1" opacity="0.2"/>
+            <!-- Extra Background Sketches (Birds & Clouds) -->
+            <path d="M20,140 Q25,135 30,140 Q35,135 40,140" stroke="var(--color-text-muted)" fill="none" stroke-width="1.5" opacity="0.6"/>
+            <path d="M10,160 Q15,155 20,160 Q25,155 30,160" stroke="var(--color-text-muted)" fill="none" stroke-width="1" opacity="0.4"/>
+            <path d="M30,350 Q40,340 50,350 Q60,360 70,350" stroke="var(--color-text-muted)" fill="none" stroke-width="1.5" opacity="0.3"/>
+            <circle cx="15" cy="100" r="8" fill="none" stroke="var(--color-text-muted)" stroke-width="1" opacity="0.3"/>
+        </svg>
+    </div>
+
+    <!-- Custom Cursor -->
+    <div class="cursor-dot" id="cursorDot"></div>
+    <div class="cursor-outline" id="cursorOutline"></div>
+
+    <!-- Scroll Progress Bar -->
+    <div class="scroll-progress" id="scrollProgress"></div>
+
+    <!-- Social Sidebar (Right side, like LunarPaw) -->
+    <aside class="social-sidebar" id="socialSidebar">
+        <a href="https://github.com/azad-727" target="_blank" rel="noopener" class="social-link" aria-label="GitHub">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+            <span>GitHub</span>
+        </a>
+        <a href="https://linkedin.com/in/azad-727" target="_blank" rel="noopener" class="social-link" aria-label="LinkedIn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+            <span>LinkedIn</span>
+        </a>
+        <a href="mailto:azad.mukesh727@gmail.com" class="social-link" aria-label="Email">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+            <span>Email</span>
+        </a>
+        <a href="https://drive.google.com/file/d/1Spi1A-WnD8az35EzA-en18wNk3JS-3Yb/view" target="_blank" rel="noopener" class="social-link social-link--accent" aria-label="Resume">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            <span>Resume</span>
+        </a>
+    </aside>
+
+    <!-- Navigation (matches LunarPaw nav style) -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="#hero" class="nav-logo">
+                <span class="nav-logo-text">Azad</span>
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="#about" class="nav-link" data-i18n="navAbout">About</a>
+                <a href="#projects" class="nav-link" data-i18n="navProjects">Projects</a>
+                <a href="#process" class="nav-link" data-i18n="navProcess">How I Work</a>
+                <a href="#skills" class="nav-link" data-i18n="navSkills">Skills</a>
+                <a href="#experience" class="nav-link" data-i18n="navJourney">Journey</a>
+                <a href="#contact" class="nav-link" data-i18n="navContact">Contact</a>
+            </div>
+            <div class="nav-actions">
+                <button class="btn-icon" id="voiceToggle" aria-label="Toggle voice assistant" title="Voice Assistant">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                </button>
+                <button class="btn-icon" id="gestureToggle" aria-label="Toggle gesture control" title="Gesture Control">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"></path><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"></path><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"></path><path d="M18 8a2 2 0 0 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 13"></path></svg>
+                </button>
+                <button class="btn-icon" id="themeToggle" aria-label="Toggle theme" title="Toggle Theme">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                </button>
+                <button class="btn-icon" id="langToggle" aria-label="Change Language" title="Change Language">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                </button>
+                <a href="#contact" class="btn btn-primary nav-cta" data-i18n="hireMe">Hire Me</a>
+            </div>
+            <button class="nav-mobile-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+        <!-- Mobile Menu -->
+        <div class="nav-mobile-menu" id="mobileMenu">
+            <a href="#about" class="nav-mobile-link" data-i18n="navAbout">About</a>
+            <a href="#projects" class="nav-mobile-link" data-i18n="navProjects">Projects</a>
+            <a href="#process" class="nav-mobile-link" data-i18n="navProcess">How I Work</a>
+            <a href="#skills" class="nav-mobile-link" data-i18n="navSkills">Skills</a>
+            <a href="#experience" class="nav-mobile-link" data-i18n="navJourney">Journey</a>
+            <a href="#contact" class="nav-mobile-link" data-i18n="navContact">Contact</a>
+            <a href="#contact" class="btn btn-primary" style="margin-top:16px;text-align:center;" data-i18n="hireMe">Hire Me</a>
+        </div>
+    </nav>
+
+    <!-- ============ HERO SECTION ============ -->
+    <section class="hero" id="hero">
+        <div class="container hero-container">
+            <div class="hero-left">
+                <div class="hero-badge">
+                    <span class="badge-dot"></span>
+                    <span data-i18n="openToWork">Available for Opportunities</span>
+                </div>
+                <h1 class="hero-title" id="heroNameTitle">
+                    Singh Azad<br>
+                    <span class="hero-title-accent">Mukesh.</span>
+                </h1>
+                <p class="hero-tagline" data-i18n="heroTagline">Backend & System Design Specialist — I merge innovation with code to transform real-world challenges into scalable systems. My primary focus is on robust backend architecture and data structures, while leveraging AI-enhanced coding for frontend interfaces. Features AI Hand Gesture Control and smart Multilingual localization. Every project I build starts with a problem I couldn't ignore.</p>
+                <div class="hero-buttons">
+                    <a href="#projects" class="btn btn-primary" data-i18n="exploreWork">Explore My Work</a>
+                    <a href="https://drive.google.com/file/d/1Spi1A-WnD8az35EzA-en18wNk3JS-3Yb/view" target="_blank" rel="noopener" class="btn btn-outline" data-i18n="downloadCv">Download CV</a>
+                </div>
+            </div>
+            <div class="hero-right">
+                <div class="status-card">
+                    <div class="status-card-header">
+                        <span class="status-badge" data-i18n="status">Status</span>
+                        <span class="status-title" data-i18n="openToWork">Open to Work</span>
+                    </div>
+                    <div class="status-card-body">
+                        <div class="status-role">
+                            <span class="status-label" data-i18n="currFocus">Current Focus</span>
+                            <span class="status-value" data-i18n="focusVal">Backend & Distributed Systems</span>
+                        </div>
+                        <div class="status-divider"></div>
+                        <div class="status-stats">
+                            <div class="status-stat">
+                                <span class="status-stat-number" data-count="6">0</span>
+                                <span class="status-stat-label" data-i18n="statsProj">Projects</span>
+                            </div>
+                            <div class="status-stat">
+                                <span class="status-stat-number" data-count="10">0</span>
+                                <span class="status-stat-label" data-i18n="statsTech">Technologies</span>
+                            </div>
+                            <div class="status-stat">
+                                <span class="status-stat-number" data-count="6">0</span>
+                                <span class="status-stat-label" data-i18n="statsProb">Problems Solved</span>
+                            </div>
+                        </div>
+                        <div class="status-divider"></div>
+                        <div class="status-tags">
+                            <span class="status-tag">Java</span>
+                            <span class="status-tag">JavaScript</span>
+                            <span class="status-tag">React</span>
+                            <span class="status-tag">Spring Boot</span>
+                            <span class="status-tag">Node.js</span>
+                        </div>
+                        <a href="#contact" class="btn btn-primary status-cta" data-i18n="hireMe">Let's Connect</a>
+                        <a href="#process" class="status-link" data-i18n="seeHowIWork">See How I Work →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Mountain Landscape SVG (hand-drawn style, like LunarPaw) -->
+        <div class="hero-mountains animated-waves">
+            <svg class="mountain-svg" viewBox="0 0 1440 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                <path class="mountain-layer mountain-layer--back" d="M0,224 C120,180 240,160 360,192 C480,224 520,140 640,128 C760,116 800,176 920,192 C1040,208 1100,150 1200,160 C1300,170 1380,200 1440,192 L1440,320 L0,320 Z" fill="var(--color-bg-subtle)"/>
+                <path class="mountain-layer mountain-layer--mid" d="M0,256 C100,220 200,240 320,224 C440,208 480,260 600,256 C720,252 780,200 900,216 C1020,232 1080,210 1200,224 C1320,238 1400,250 1440,240 L1440,320 L0,320 Z" fill="var(--color-border-subtle)"/>
+                <path class="mountain-layer mountain-layer--front" d="M0,288 C80,272 160,280 280,268 C400,256 440,290 560,284 C680,278 740,260 860,272 C980,284 1060,275 1180,280 C1300,285 1400,290 1440,284 L1440,320 L0,320 Z" fill="var(--color-border-light)"/>
+                <!-- Hand-drawn style details -->
+                <circle cx="200" cy="140" r="3" fill="var(--color-text-muted)" opacity="0.5"/>
+                <circle cx="600" cy="100" r="4" fill="var(--color-text-muted)" opacity="0.4"/>
+                <circle cx="1000" cy="120" r="3" fill="var(--color-text-muted)" opacity="0.5"/>
+                <circle cx="400" cy="110" r="2" fill="var(--color-text-muted)" opacity="0.6"/>
+                <circle cx="800" cy="90" r="3" fill="var(--color-text-muted)" opacity="0.3"/>
+                <circle cx="1200" cy="130" r="2" fill="var(--color-text-muted)" opacity="0.5"/>
+                <!-- Small trees/vegetation sketches -->
+                <path d="M300,225 L303,210 L306,225" stroke="var(--color-text-muted)" fill="none" stroke-width="1.5" opacity="0.4"/>
+                <path d="M310,228 L312,218 L314,228" stroke="var(--color-text-muted)" fill="none" stroke-width="1" opacity="0.3"/>
+                <path d="M700,200 L704,182 L708,200" stroke="var(--color-text-muted)" fill="none" stroke-width="1.5" opacity="0.4"/>
+                <path d="M1100,210 L1103,195 L1106,210" stroke="var(--color-text-muted)" fill="none" stroke-width="1.5" opacity="0.4"/>
+                <!-- Wavy cloud lines -->
+                <path class="cloud-anim" d="M100,80 Q150,70 200,80 Q250,90 300,80" stroke="var(--color-text-muted)" fill="none" stroke-width="1" opacity="0.5"/>
+                <path class="cloud-anim" d="M800,60 Q850,50 900,60 Q950,70 1000,60" stroke="var(--color-text-muted)" fill="none" stroke-width="1" opacity="0.4"/>
+            </svg>
+        </div>
+    </section>
+
+    <!-- ============ TECH SHOWCASE (scrolling marquee like LunarPaw's card row) ============ -->
+    <section class="showcase" id="showcase">
+        <div class="showcase-track">
+            <div class="showcase-slide">
+                <div class="tech-card"><span class="tech-icon">☕</span><span class="tech-name">Java 21 LTS</span></div>
+                <div class="tech-card"><span class="tech-icon">🍃</span><span class="tech-name">Spring Boot</span></div>
+                <div class="tech-card"><span class="tech-icon">☸️</span><span class="tech-name">Kubernetes</span></div>
+                <div class="tech-card"><span class="tech-icon">🐳</span><span class="tech-name">Docker</span></div>
+                <div class="tech-card"><span class="tech-icon">⚡</span><span class="tech-name">Redis</span></div>
+                <div class="tech-card"><span class="tech-icon">🍃</span><span class="tech-name">MongoDB</span></div>
+                <div class="tech-card"><span class="tech-icon">☁️</span><span class="tech-name">AWS S3</span></div>
+                <div class="tech-card"><span class="tech-icon">🧠</span><span class="tech-name">Gemini API</span></div>
+                <div class="tech-card"><span class="tech-icon">⚛️</span><span class="tech-name">React</span></div>
+                <div class="tech-card"><span class="tech-icon">📐</span><span class="tech-name">System Design</span></div>
+                <div class="tech-card"><span class="tech-icon">🧮</span><span class="tech-name">DSA (200+)</span></div>
+            </div>
+            <div class="showcase-slide" aria-hidden="true">
+                <div class="tech-card"><span class="tech-icon">☕</span><span class="tech-name">Java 21 LTS</span></div>
+                <div class="tech-card"><span class="tech-icon">🍃</span><span class="tech-name">Spring Boot</span></div>
+                <div class="tech-card"><span class="tech-icon">☸️</span><span class="tech-name">Kubernetes</span></div>
+                <div class="tech-card"><span class="tech-icon">🐳</span><span class="tech-name">Docker</span></div>
+                <div class="tech-card"><span class="tech-icon">⚡</span><span class="tech-name">Redis</span></div>
+                <div class="tech-card"><span class="tech-icon">🍃</span><span class="tech-name">MongoDB</span></div>
+                <div class="tech-card"><span class="tech-icon">☁️</span><span class="tech-name">AWS S3</span></div>
+                <div class="tech-card"><span class="tech-icon">🧠</span><span class="tech-name">Gemini API</span></div>
+                <div class="tech-card"><span class="tech-icon">⚛️</span><span class="tech-name">React</span></div>
+                <div class="tech-card"><span class="tech-icon">📐</span><span class="tech-name">System Design</span></div>
+                <div class="tech-card"><span class="tech-icon">🧮</span><span class="tech-name">DSA (200+)</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ MAD SCIENTIST LAB ============ -->
+    <section class="section" id="madlab" style="padding-top: 100px; padding-bottom: 50px;">
+        <div class="container">
+            <div class="section-header reveal">
+                <h2 class="section-title" style="font-size: 3rem; color: var(--color-primary);" data-i18n="madLabTitle">The Mad Scientist Lab 🧪</h2>
+                <p class="section-subtitle" data-i18n="madLabDesc" style="max-width: 800px; margin: 0 auto;">I don't just build websites; I engineer experiences. I've injected some crazy, curiosity-inducing features into this portfolio just because I could. Try them out:</p>
+            </div>
+            
+            <div class="process-grid" style="margin-top: 40px;">
+                <div class="process-card reveal">
+                    <div class="process-icon" style="background: rgba(0, 198, 255, 0.1); color: #00C6FF;">🗣️</div>
+                    <h3 data-i18n="madFeat1">AI Voice Assistant</h3>
+                    <p data-i18n="madFeat1Desc">Click the mic icon and say 'Turn on Dark Mode' or 'Show me your Projects'. Integrated via Web Speech API with Gemini-style UI.</p>
+                </div>
+                <div class="process-card reveal" style="transition-delay: 0.1s">
+                    <div class="process-icon" style="background: rgba(0, 255, 135, 0.1); color: #00FF87;">✋</div>
+                    <h3 data-i18n="madFeat2">Computer Vision Gestures</h3>
+                    <p data-i18n="madFeat2Desc">Click the hand icon to control this site with your webcam. Point up/down to scroll smoothly, use three fingers to toggle the theme!</p>
+                </div>
+                <div class="process-card reveal" style="transition-delay: 0.2s">
+                    <div class="process-icon" style="background: rgba(157, 78, 221, 0.1); color: #9D4EDD;">🌍</div>
+                    <h3 data-i18n="madFeat3">Smart Geolocation Localization</h3>
+                    <p data-i18n="madFeat3Desc">The site silently detected your country on load and offered your native language automatically out of 12 fully supported global languages.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ ABOUT SECTION ============ -->
+    <section class="about" id="about">
+        <div class="container">
+            <h2 class="section-title reveal" data-i18n="aboutTitle">Who Am I?</h2>
+            <p class="section-subtitle reveal" data-i18n="aboutSub">A developer who sees problems as opportunities to create impact through code</p>
+            <div class="philosophy-cards">
+                <div class="philosophy-card reveal">
+                    <div class="philosophy-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    </div>
+                    <h3 class="philosophy-title" data-i18n="phi1Title">I Find Problems</h3>
+                    <p class="philosophy-desc" data-i18n="phi1Desc">I observe the world around me — spotting inefficiencies, broken systems, and unmet needs that technology can address. Every solution starts with understanding the pain point deeply.</p>
+                </div>
+                <div class="philosophy-card reveal">
+                    <div class="philosophy-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+                    </div>
+                    <h3 class="philosophy-title" data-i18n="phi2Title">I Design Solutions</h3>
+                    <p class="philosophy-desc" data-i18n="phi2Desc">I architect elegant, scalable solutions that merge innovation with practicality. Research, design, and user empathy guide every technical decision I make.</p>
+                </div>
+                <div class="philosophy-card reveal">
+                    <div class="philosophy-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg>
+                    </div>
+                    <h3 class="philosophy-title" data-i18n="phi3Title">I Build Reality</h3>
+                    <p class="philosophy-desc" data-i18n="phi3Desc">From concept to deployment — I write clean, production-grade code that transforms ideas into working products. Each line of code serves a real-world purpose.</p>
+                </div>
+            </div>
+            <div class="about-stats reveal">
+                <div class="stat-item">
+                    <span class="stat-number" data-count="6">0</span><span class="stat-plus">+</span>
+                    <span class="stat-label" data-i18n="statsProj">Projects Shipped</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" data-count="10">0</span><span class="stat-plus">+</span>
+                    <span class="stat-label" data-i18n="statsTech">Technologies</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" data-count="3">0</span><span class="stat-plus">+</span>
+                    <span class="stat-label" data-i18n="statsYears">Years Coding</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" data-count="6">0</span>
+                    <span class="stat-label" data-i18n="statsProb">Problems Solved</span>
+                </div>
+            </div>
+        </div>
+        <!-- Decorative Mountain Divider -->
+        <div class="section-mountains animated-waves">
+            <svg viewBox="0 0 1440 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0,64 Q180,20 360,48 Q540,76 720,40 Q900,4 1080,48 Q1260,92 1440,56 L1440,120 L0,120 Z" fill="var(--color-bg-subtle)"/>
+            </svg>
+        </div>
+    </section>
+
+    <!-- ============ PROJECTS SECTION ("Stories of Solutions" — card grid like LunarPaw) ============ -->
+    <section class="projects" id="projects">
+        <div class="container">
+            <h2 class="section-title reveal" data-i18n="projTitle">Stories of Solutions</h2>
+            <p class="section-subtitle reveal" data-i18n="projSub">Every project starts with a problem I couldn't ignore. Click any card to read the full story.</p>
+
+            <div class="project-grid">
+                <!-- Project 1: Tverse -->
+                <div class="project-card reveal" data-project="tverse">
+                    <div class="project-card-image">
+                        <div class="project-card-placeholder" style="background: linear-gradient(135deg, #f0f0f0, #ddd);">
+                            <img src="./assets/images/tverse.png" alt="Tverse Screenshot" class="project-screenshot" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            <svg class="fallback-svg" style="display:none;" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                        </div>
+                        <div class="project-card-overlay">
+                            <span class="project-problem-label" data-i18n="projProblem">The Problem</span>
+                            <p class="project-problem-text" data-i18n="proj1Prob">E-commerce operations required too much manual, repetitive work with chaotic Excel sheets, leading to 'ghost stock' and order mismatch.</p>
+                        </div>
+                    </div>
+                    <div class="project-card-body">
+                        <h3 class="project-card-title" data-i18n="proj1Title">Tverse</h3>
+                        <p class="project-card-desc" data-i18n="proj1Desc">An all-in-one E-commerce ERP built from the ground up to level the playing field for small sellers, featuring intelligent inventory mapping.</p>
+                        <div class="project-card-tags">
+                            <span class="project-tag" data-i18n="proj1Tag1">Microservices</span>
+                            <span class="project-tag" data-i18n="proj1Tag2">Node.js</span>
+                            <span class="project-tag" data-i18n="proj1Tag3">Automation</span>
+                        </div>
+                        <div class="project-card-links">
+                            <a href="https://github.com/azad-727/Tverse" target="_blank" rel="noopener" class="project-link" data-i18n="projLink">GitHub →</a>
+                            <a href="https://thalasiknitfab.com" target="_blank" rel="noopener" class="project-link" data-i18n="projLive">Live →</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 2: CivicLink -->
+                <div class="project-card reveal" data-project="civiclink">
+                    <div class="project-card-image">
+                        <div class="project-card-placeholder" style="background: linear-gradient(135deg, #f5f5f5, #e0e0e0);">
+                            <img src="./assets/images/civiclink.png" alt="CivicLink Screenshot" class="project-screenshot" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            <svg class="fallback-svg" style="display:none;" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        </div>
+                        <div class="project-card-overlay">
+                            <span class="project-problem-label" data-i18n="projProblem">The Problem</span>
+                            <p class="project-problem-text" data-i18n="proj2Prob">Broken street protocols like duplicate spots and missing communication. Authorities lacked data to prioritize and make informed decisions.</p>
+                        </div>
+                    </div>
+                    <div class="project-card-body">
+                        <h3 class="project-card-title" data-i18n="proj2Title">CivicLink</h3>
+                        <p class="project-card-desc" data-i18n="proj2Desc">A localized dashboard where reporting issues is as frictionless as uploading a photo, featuring a 'Verify' system for citizens.</p>
+                        <div class="project-card-tags">
+                            <span class="project-tag" data-i18n="proj2Tag1">Java</span>
+                            <span class="project-tag" data-i18n="proj2Tag2">Spring Boot</span>
+                            <span class="project-tag" data-i18n="proj2Tag3">Analytics</span>
+                        </div>
+                        <div class="demo-credentials">Demo Login: demo / demo</div>
+                        <div class="project-card-links">
+                            <a href="https://github.com/azad-727/civiclink-core" target="_blank" rel="noopener" class="project-link" data-i18n="projLink">GitHub →</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 3: Tykkit.fr -->
+                <div class="project-card reveal" data-project="tykkit">
+                    <div class="project-card-image">
+                        <div class="project-card-placeholder" style="background: linear-gradient(135deg, #f3f3f3, #e0e0e0);">
+                            <img src="./assets/images/tykkit.png" alt="Tykkit Screenshot" class="project-screenshot" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            <svg class="fallback-svg" style="display:none;" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        </div>
+                        <div class="project-card-overlay">
+                            <span class="project-problem-label" data-i18n="projProblem">The Problem</span>
+                            <p class="project-problem-text" data-i18n="proj3Prob">Tech fests struggled to manage and track revenue, handle login management centrally, and guide attendees.</p>
+                        </div>
+                    </div>
+                    <div class="project-card-body">
+                        <h3 class="project-card-title" data-i18n="proj3Title">Tykkit.fr</h3>
+                        <p class="project-card-desc" data-i18n="proj3Desc">A robust campus event management system solving the core problem of tracking ecommerce revenue and centralizing college fest information.</p>
+                        <div class="project-card-tags">
+                            <span class="project-tag" data-i18n="proj3Tag1">Full-Stack</span>
+                            <span class="project-tag" data-i18n="proj3Tag2">JavaScript</span>
+                            <span class="project-tag" data-i18n="proj3Tag3">Java</span>
+                        </div>
+                        <div class="demo-credentials">Demo Login: demo / demo</div>
+                        <div class="project-card-links">
+                            <a href="https://campus-event-radar-tykkit-fr-fronte.vercel.app/login" target="_blank" rel="noopener" class="project-link" data-i18n="projLive">Live →</a>
+                            <a href="https://github.com/azad-727/tykkit.fr" target="_blank" rel="noopener" class="project-link" data-i18n="projLink">GitHub →</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 4: Rituals -->
+                <div class="project-card reveal" data-project="rituals">
+                    <div class="project-card-image">
+                        <div class="project-card-placeholder" style="background: linear-gradient(135deg, #f8f8f8, #e5e5e5);">
+                            <img src="./assets/images/rituals.png" alt="Rituals Screenshot" class="project-screenshot" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            <svg class="fallback-svg" style="display:none;" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.5"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>
+                        </div>
+                        <div class="project-card-overlay">
+                            <span class="project-problem-label" data-i18n="projProblem">The Problem</span>
+                            <p class="project-problem-text" data-i18n="proj4Prob">Maintaining daily habits and tasks requires a structured system. Built to maintain personal tasks and daily routines consistently.</p>
+                        </div>
+                    </div>
+                    <div class="project-card-body">
+                        <h3 class="project-card-title" data-i18n="proj4Title">Rituals</h3>
+                        <p class="project-card-desc" data-i18n="proj4Desc">A weekly/daily habit tracker to maintain tasks and daily habits. It helps structure the chaos of daily life into actionable, trackable items.</p>
+                        <div class="project-card-tags">
+                            <span class="project-tag" data-i18n="proj4Tag1">Java</span>
+                            <span class="project-tag" data-i18n="proj4Tag2">AI Engine</span>
+                            <span class="project-tag" data-i18n="proj4Tag3">JavaScript</span>
+                        </div>
+                        <div class="demo-credentials">Demo Login: demo / demo</div>
+                        <div class="project-card-links">
+                            <a href="https://rituals-client.vercel.app/" target="_blank" rel="noopener" class="project-link" data-i18n="projLive">Live →</a>
+                            <a href="https://github.com/azad-727/rituals-api" target="_blank" rel="noopener" class="project-link" data-i18n="projBack">Backend →</a>
+                            <a href="https://github.com/azad-727/rituals-client" target="_blank" rel="noopener" class="project-link" data-i18n="projFront">Frontend →</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 5: Quick Commerce -->
+                <div class="project-card reveal" data-project="quickcommerce">
+                    <div class="project-card-image">
+                        <div class="project-card-placeholder" style="background: linear-gradient(135deg, #f5f5f5, #e8e8e8);">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.5"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"></path></svg>
+                        </div>
+                        <div class="project-card-overlay">
+                            <span class="project-problem-label" data-i18n="projProblem">The Problem</span>
+                            <p class="project-problem-text" data-i18n="proj5Prob">Driven by the hype of quick commerce. Built to explore complex logistics, inventory, and real-time order management.</p>
+                        </div>
+                    </div>
+                    <div class="project-card-body">
+                        <h3 class="project-card-title" data-i18n="proj5Title">Quick Commerce</h3>
+                        <p class="project-card-desc" data-i18n="proj5Desc">Exploring the fast tech backend world to understand how rapid delivery e-commerce platforms handle scaling and complex logistics.</p>
+                        <div class="project-card-tags">
+                            <span class="project-tag" data-i18n="proj5Tag1">Architecture</span>
+                            <span class="project-tag" data-i18n="proj5Tag2">Spring Boot</span>
+                            <span class="project-tag" data-i18n="proj5Tag3">Logistics</span>
+                        </div>
+                        <div class="project-card-links">
+                            <a href="https://github.com/azad-727/Final_Project_Quick_Commerce" target="_blank" rel="noopener" class="project-link" data-i18n="projLink">GitHub →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ PROCESS SECTION ("How I Work" — like LunarPaw's "How To Buy") ============ -->
+    <section class="process" id="process">
+        <div class="container">
+            <!-- Decorative Frame (like LunarPaw's tablet/device frame) -->
+            <div class="process-frame reveal">
+                <div class="process-frame-inner">
+                    <div class="frame-header">
+                        <span class="frame-dot"></span>
+                        <span class="frame-dot"></span>
+                        <span class="frame-dot"></span>
+                    </div>
+                    <div class="frame-content">
+                        <div class="frame-icon">🔍</div>
+                        <div class="frame-icon">💡</div>
+                        <div class="frame-icon">⚙️</div>
+                        <div class="frame-icon">🚀</div>
+                        <div class="frame-icon">✅</div>
+                        <div class="frame-icon">📊</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="process-header reveal">
+                <h2 class="section-title" data-i18n="processTitle">How I Work</h2>
+                <p class="section-subtitle" data-i18n="processSub">From problem to production — a systematic approach to building solutions that matter</p>
+                <a href="#contact" class="btn btn-primary" data-i18n="startProj">Start a Project</a>
+            </div>
+
+            <div class="process-grid">
+                <div class="process-card reveal">
+                    <div class="process-number">01</div>
+                    <div class="process-icon-wrap">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                    </div>
+                    <h3 class="process-card-title" data-i18n="proc1Title">Identify the Problem</h3>
+                    <p class="process-card-desc" data-i18n="proc1Desc">I start by deeply understanding the real-world problem. I research, interview users, and map the pain points before writing a single line of code.</p>
+                </div>
+                <div class="process-card reveal">
+                    <div class="process-number">02</div>
+                    <div class="process-icon-wrap">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+                    </div>
+                    <h3 class="process-card-title" data-i18n="proc2Title">Research & Architect</h3>
+                    <p class="process-card-desc" data-i18n="proc2Desc">I research existing solutions, choose the right tech stack, and design a scalable architecture. Every decision is intentional and data-driven.</p>
+                </div>
+                <div class="process-card reveal">
+                    <div class="process-number">03</div>
+                    <div class="process-icon-wrap">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                    </div>
+                    <h3 class="process-card-title" data-i18n="proc3Title">Build & Iterate</h3>
+                    <p class="process-card-desc" data-i18n="proc3Desc">I build MVPs fast, gather feedback, and iterate rapidly. Clean code, version control, and continuous testing ensure quality at every step.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SKILLS HUB (like LunarPaw's Tokenomics diagram) ============ -->
+    <section class="skills" id="skills">
+        <div class="container">
+            <h2 class="section-title reveal" data-i18n="skillsTitle">Technical Arsenal</h2>
+            <p class="section-subtitle reveal" data-i18n="skillsSub">Technologies I use to turn ideas into reality</p>
+
+            <div class="skills-grid reveal">
+                <div class="skill-category">
+                    <h3 class="skill-category-title" data-i18n="skCat1">Backend & Architecture</h3>
+                    <div class="skill-tags">
+                        <span class="skill-tag">Java (Core & Advanced)</span>
+                        <span class="skill-tag">Spring Boot 3.4</span>
+                        <span class="skill-tag">Microservices Architecture</span>
+                        <span class="skill-tag">System Design & Scaling</span>
+                        <span class="skill-tag">RESTful APIs</span>
+                        <span class="skill-tag">Java FX & Swing</span>
+                    </div>
+                </div>
+                <div class="skill-category">
+                    <h3 class="skill-category-title" data-i18n="skCat2">Databases & Caching</h3>
+                    <div class="skill-tags">
+                        <span class="skill-tag">MongoDB Atlas (GeoJSON)</span>
+                        <span class="skill-tag">Redis (Write-buffering)</span>
+                        <span class="skill-tag">MySQL & PostgreSQL</span>
+                        <span class="skill-tag">Neo4j (Graph DB)</span>
+                        <span class="skill-tag">NoSQL Optimization</span>
+                    </div>
+                </div>
+                <div class="skill-category">
+                    <h3 class="skill-category-title" data-i18n="skCat3">Cloud & DevOps</h3>
+                    <div class="skill-tags">
+                        <span class="skill-tag">AWS S3 (Pre-Signed URLs)</span>
+                        <span class="skill-tag">Docker Containerization</span>
+                        <span class="skill-tag">Distributed Systems</span>
+                        <span class="skill-tag">Git & CI/CD Pipelines</span>
+                    </div>
+                </div>
+                <div class="skill-category">
+                    <h3 class="skill-category-title" data-i18n="skCat4">Core Competencies</h3>
+                    <div class="skill-tags">
+                        <span class="skill-tag">Data Structures & Algorithms (DSA)</span>
+                        <span class="skill-tag">Idempotency & N+1 Optimization</span>
+                        <span class="skill-tag">Inventory State Machines</span>
+                        <span class="skill-tag">Multi-Tenancy Isolation</span>
+                        <span class="skill-tag">OOP & Advanced DBMS</span>
+                    </div>
+                </div>
+                <div class="skill-category">
+                    <h3 class="skill-category-title" data-i18n="skCat5">Business & Strategy</h3>
+                    <div class="skill-tags">
+                        <span class="skill-tag">E-commerce Expertise</span>
+                        <span class="skill-tag">Supply Chain Management (WMS/OMS)</span>
+                        <span class="skill-tag">Digital Marketing Strategy</span>
+                        <span class="skill-tag">Entrepreneurial Scaling</span>
+                        <span class="skill-tag">Strategic Mindset</span>
+                    </div>
+                </div>
+                <div class="skill-category">
+                    <h3 class="skill-category-title" data-i18n="skCat6">Frontend & Intelligence</h3>
+                    <div class="skill-tags">
+                        <span class="skill-tag">JavaScript (ES6+)</span>
+                        <span class="skill-tag">React.js</span>
+                        <span class="skill-tag">Tailwind CSS</span>
+                        <span class="skill-tag">Machine Learning & AI</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="section-mountains animated-waves">
+            <svg viewBox="0 0 1440 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0,80 Q200,30 400,60 Q600,90 800,50 Q1000,10 1200,60 Q1400,110 1440,80 L1440,120 L0,120 Z" fill="var(--color-bg)"/>
+            </svg>
+        </div>
+    </section>
+
+    <!-- ============ EXPERIENCE TIMELINE ============ -->
+    <section class="experience" id="experience">
+        <div class="container">
+            <h2 class="section-title reveal" data-i18n="expTitle">My Journey</h2>
+            <p class="section-subtitle reveal" data-i18n="expSub">The path that shaped me as a developer and problem solver</p>
+
+            <div class="timeline">
+                <div class="timeline-item timeline-item--right reveal">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <span class="timeline-date" data-i18n="expDate1">Present</span>
+                        <h3 class="timeline-role" data-i18n="expRole1">CivicLink Platform</h3>
+                        <p class="timeline-company" data-i18n="expComp1">In Progress</p>
+                        <p class="timeline-desc" data-i18n="expDesc1">Currently building CivicLink, a citizen issue reporting platform. Designing a localized dashboard where reporting issues is frictionless and verifiable.</p>
+                    </div>
+                </div>
+                <div class="timeline-item timeline-item--left reveal">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <span class="timeline-date" data-i18n="expDate2">03-05-2026</span>
+                        <h3 class="timeline-role" data-i18n="expRole2">Tverse v1.0</h3>
+                        <p class="timeline-company" data-i18n="expComp2">Flagship Project Shipped</p>
+                        <p class="timeline-desc" data-i18n="expDesc2">Completed version 1.0 of Tverse — an all-in-one e-commerce ERP system solving inventory mapping and ghost stock issues for small sellers.</p>
+                    </div>
+                </div>
+                <div class="timeline-item timeline-item--left reveal">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <span class="timeline-date" data-i18n="expDate3">10-04-2026</span>
+                        <h3 class="timeline-role" data-i18n="expRole3">Rituals AI Platform</h3>
+                        <p class="timeline-company" data-i18n="expComp3">Personal Habit Tracker</p>
+                        <p class="timeline-desc" data-i18n="expDesc3">Developed Rituals to structure the chaos of daily life. Built a complete architecture for maintaining personal tasks and daily routines.</p>
+                    </div>
+                </div>
+                <div class="timeline-item timeline-item--right reveal">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <span class="timeline-date" data-i18n="expDate4">05-04-2026</span>
+                        <h3 class="timeline-role" data-i18n="expRole4">Tykkit.fr</h3>
+                        <p class="timeline-company" data-i18n="expComp4">Campus Event System</p>
+                        <p class="timeline-desc" data-i18n="expDesc4">Shipped Tykkit.fr, a robust platform centralizing college tech fest information, tracking ecommerce revenue, and handling login management.</p>
+                    </div>
+                </div>
+                <div class="timeline-item timeline-item--left reveal">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <span class="timeline-date" data-i18n="expDate5">Aug 2024</span>
+                        <h3 class="timeline-role" data-i18n="expRole5">Quick Commerce Architecture</h3>
+                        <p class="timeline-company" data-i18n="expComp5">Backend Exploration</p>
+                        <p class="timeline-desc" data-i18n="expDesc5">Explored fast tech backend systems by building a Blinkit clone to understand how rapid delivery e-commerce platforms handle scaling.</p>
+                    </div>
+                </div>
+                <div class="timeline-item timeline-item--right reveal">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <span class="timeline-date" data-i18n="expDate6">2020 - 2023</span>
+                        <h3 class="timeline-role" data-i18n="expRole6">Operations Manager</h3>
+                        <p class="timeline-company" data-i18n="expComp6">Family Retail Business</p>
+                        <p class="timeline-desc" data-i18n="expDesc6">Scaled annual revenue by 200% via digital transformation of warehouse logistics. Gained deep expertise in multi-channel order fulfillment.</p>
+                    </div>
+                </div>
+                <div class="timeline-item timeline-item--left reveal">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <span class="timeline-date" data-i18n="expDate7">Academic Background</span>
+                        <h3 class="timeline-role" data-i18n="expRole7">Top 1% Student (BCA 9.0 CGPA)</h3>
+                        <p class="timeline-company" data-i18n="expComp7">MCA Candidate, MIT Manipal</p>
+                        <p class="timeline-desc" data-i18n="expDesc7">Currently pursuing MCA at MIT Manipal. Certified in DSA and Digital Marketing. Continuously learning system design and backend structures.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ CONTACT SECTION ============ -->
+    <section class="contact" id="contact">
+        <div class="container">
+            <h2 class="section-title reveal" data-i18n="conTitle">Let's Build Something Together</h2>
+            <p class="section-subtitle reveal" data-i18n="conSub">Have a problem that needs solving? Let's talk about how we can create impact together.</p>
+
+            <div class="contact-container reveal">
+                <div class="contact-info">
+                    <div class="contact-info-card">
+                        <h3 class="contact-info-title" data-i18n="conGetInTouch">Get in Touch</h3>
+                        <div class="contact-info-item">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                            <span>sazad3774@gmail.com</span>
+                        </div>
+                        <div class="contact-info-item">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                            <span data-i18n="location">India</span>
+                        </div>
+                        <div class="contact-info-item">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"></path></svg>
+                            <a href="https://github.com/azad-727" target="_blank" rel="noopener">github.com/azad-727</a>
+                        </div>
+                    </div>
+                    <div class="contact-availability">
+                        <span class="availability-dot"></span>
+                        <span data-i18n="avail">Currently available for opportunities</span>
+                    </div>
+                </div>
+                <form class="contact-form reveal" id="contactForm" style="transition-delay: 0.1s">
+                    <div class="form-group">
+                        <input type="text" id="name" name="name" class="form-input" data-i18n="nameLabel" placeholder="Your Name" required>
+                        <label for="name" class="form-label" data-i18n="nameLabel">Your Name</label>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" id="email" name="email" class="form-input" data-i18n="emailLabel" placeholder="Your Email" required>
+                        <label for="email" class="form-label" data-i18n="emailLabel">Your Email</label>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="message" name="message" class="form-textarea" data-i18n="msgLabel" placeholder="Your Message" rows="5" required></textarea>
+                        <label for="message" class="form-label" data-i18n="msgLabel">Your Message</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-submit" data-i18n="sendBtn">Send Message</button>
+                </form>
+            </div>
+        </div>
+        <!-- Bottom Mountain Landscape -->
+        <div class="contact-mountains animated-waves">
+            <svg viewBox="0 0 1440 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                <path class="mountain-layer--back" d="M0,120 C120,80 240,100 360,90 C480,80 520,120 640,110 C760,100 800,80 920,90 C1040,100 1100,70 1200,80 C1300,90 1380,110 1440,100 L1440,200 L0,200 Z" fill="var(--color-bg-subtle)"/>
+                <path class="mountain-layer--mid" d="M0,150 C100,130 200,140 320,135 C440,130 480,150 600,145 C720,140 780,125 900,135 C1020,145 1080,135 1200,140 C1320,145 1400,150 1440,145 L1440,200 L0,200 Z" fill="var(--color-border-subtle)"/>
+                <path class="mountain-layer--front" d="M0,170 C80,162 160,168 280,165 C400,162 440,172 560,168 C680,164 740,158 860,165 C980,172 1060,166 1180,170 C1300,174 1400,172 1440,168 L1440,200 L0,200 Z" fill="var(--color-border-light)"/>
+                <path d="M300,135 L303,118 L306,135" stroke="var(--color-text-muted)" fill="none" stroke-width="1.5" opacity="0.4"/>
+                <path d="M700,120 L704,102 L708,120" stroke="var(--color-text-muted)" fill="none" stroke-width="1.5" opacity="0.4"/>
+                <path d="M1100,125 L1103,108 L1106,125" stroke="var(--color-text-muted)" fill="none" stroke-width="1.5" opacity="0.4"/>
+            </svg>
+        </div>
+    </section>
+
+    <!-- ============ FOOTER ============ -->
+    <footer class="footer">
+        <div class="container footer-container">
+            <div class="footer-left">
+                <span class="footer-logo">Azad</span>
+                <p class="footer-tagline">Building solutions, one problem at a time.</p>
+            </div>
+            <div class="footer-links">
+                <a href="https://github.com/azad-727" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://www.linkedin.com/in/me-azad-singh/" target="_blank" rel="noopener">LinkedIn</a>
+                <a href="mailto:azad.mukesh727@gmail.com">Email</a>
+                <a href="https://drive.google.com/file/d/1Spi1A-WnD8az35EzA-en18wNk3JS-3Yb/view" target="_blank" rel="noopener">Resume</a>
+            </div>
+            <p class="footer-copyright">© 2026 Singh Azad Mukesh. Crafted with passion & code.</p>
+        </div>
+    </footer>
+
+    <!-- Project Story Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="projectModal">
+            <button class="modal-close" id="modalClose">&times;</button>
+            <div class="modal-content" id="modalContent">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Gesture Control Overlay -->
+    <div class="gesture-overlay" id="gestureOverlay" style="display:none;">
+        <div class="gesture-feed">
+            <video id="gestureVideo" autoplay playsinline></video>
+            <canvas id="gestureCanvas"></canvas>
+        </div>
+        <div class="gesture-info">
+            <p>✋ Palm — Pause | ☝️ Point — Down | ✌️ Peace — Up | 3️⃣ 3-Fingers — Theme</p>
+        </div>
+    </div>
+
+    <!-- Voice Assistant Overlay (Gemini Live Style) -->
+    <div class="voice-overlay" id="voiceOverlay">
+        <div class="voice-visualizer">
+            <div class="voice-orb orb-1"></div>
+            <div class="voice-orb orb-2"></div>
+            <div class="voice-orb orb-3"></div>
+        </div>
+        <p class="voice-status" id="voiceStatus">Listening... Say "Projects", "Dark Mode", or "Scroll Down"</p>
+    </div>
+
+    <!-- Language Selection Modal -->
+    <div class="modal-overlay" id="langModal">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <h2 style="margin-bottom: 8px;" data-i18n="langSelectHeader">Select Language</h2>
+            <p style="color: var(--color-text-secondary); margin-bottom: 24px; font-size: 14px;" id="langSuggestion" data-i18n="langSuggest">Choose your preferred language.</p>
+            <div class="lang-options" id="langOptionsContainer">
+                <!-- Dynamically populated -->
+            </div>
+            <button class="btn btn-outline" style="margin-top: 24px; width: 100%;" onclick="document.getElementById('langModal').classList.remove('active'); document.body.style.overflow='';">Close</button>
+        </div>
+    </div>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
