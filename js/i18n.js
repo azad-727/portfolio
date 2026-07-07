@@ -22,24 +22,14 @@ window.translations = {
         
         proj1Prob: "E-commerce operations required too much manual, repetitive work with chaotic Excel sheets, leading to 'ghost stock' and order mismatch.",
         proj1Title: "Tverse", proj1Desc: "An all-in-one E-commerce ERP built from the ground up to level the playing field for small sellers, featuring intelligent inventory mapping.",
-        proj1Tag1: "Microservices", proj1Tag2: "Node.js", proj1Tag3: "Automation",
-        
         proj2Prob: "Broken street protocols like duplicate spots and missing communication. Authorities lacked data to prioritize and make informed decisions.",
         proj2Title: "CivicLink", proj2Desc: "A localized dashboard where reporting issues is as frictionless as uploading a photo, featuring a 'Verify' system for citizens.",
-        proj2Tag1: "Java", proj2Tag2: "Spring Boot", proj2Tag3: "Analytics",
-        
         proj3Prob: "Tech fests struggled to manage and track revenue, handle login management centrally, and guide attendees.",
         proj3Title: "Tykkit.fr", proj3Desc: "A robust campus event management system solving the core problem of tracking ecommerce revenue and centralizing college fest information.",
-        proj3Tag1: "Full-Stack", proj3Tag2: "JavaScript", proj3Tag3: "Java",
-        
         proj4Prob: "Maintaining daily habits and tasks requires a structured system. Built to maintain personal tasks and daily routines consistently.",
         proj4Title: "Rituals", proj4Desc: "A weekly/daily habit tracker to maintain tasks and daily habits. It helps structure the chaos of daily life into actionable, trackable items.",
-        proj4Tag1: "Java", proj4Tag2: "AI Engine", proj4Tag3: "JavaScript",
-        
         proj5Prob: "Driven by the hype of quick commerce. Built to explore complex logistics, inventory, and real-time order management.",
         proj5Title: "Quick Commerce", proj5Desc: "Exploring the fast tech backend world to understand how rapid delivery e-commerce platforms handle scaling and complex logistics.",
-        proj5Tag1: "Architecture", proj5Tag2: "Spring Boot", proj5Tag3: "Logistics",
-        
         expDate1: "Present", expRole1: "CivicLink Platform", expComp1: "In Progress", expDesc1: "Currently building CivicLink, a citizen issue reporting platform. Designing a localized dashboard where reporting issues is frictionless and verifiable.",
         expDate2: "03-05-2026", expRole2: "Tverse v1.0", expComp2: "Flagship Project Shipped", expDesc2: "Completed version 1.0 of Tverse — an all-in-one e-commerce ERP system solving inventory mapping and ghost stock issues for small sellers.",
         expDate3: "10-04-2026", expRole3: "Rituals AI Platform", expComp3: "Personal Habit Tracker", expDesc3: "Developed Rituals to structure the chaos of daily life. Built a complete architecture for maintaining personal tasks and daily routines.",
@@ -68,12 +58,7 @@ window.translations = {
         langSelectHeader: "选择语言", langSuggest: "选择您喜欢的语言。",
         
         projProblem: "问题", projLink: "GitHub →", projLive: "在线 →", projBack: "后端 →", projFront: "前端 →",
-        proj1Prob: "电子商务运营需要太多手动的重复性工作...", proj1Title: "Tverse", proj1Desc: "一个从头开始构建的一体化电子商务ERP系统...", proj1Tag1: "微服务", proj1Tag2: "Node.js", proj1Tag3: "自动化",
-        proj2Prob: "街道协议遭到破坏...", proj2Title: "CivicLink", proj2Desc: "一个本地化的仪表板，公民可以在这里无缝地报告问题...", proj2Tag1: "Java", proj2Tag2: "Spring Boot", proj2Tag3: "分析",
-        proj3Prob: "科技节难以管理和跟踪收入...", proj3Title: "Tykkit.fr", proj3Desc: "一个强大的校园活动管理系统...", proj3Tag1: "全栈", proj3Tag2: "JavaScript", proj3Tag3: "Java",
-        proj4Prob: "维持日常习惯和任务需要一个结构化的系统...", proj4Title: "Rituals", proj4Desc: "一个每周/每天的习惯跟踪器...", proj4Tag1: "Java", proj4Tag2: "人工智能引擎", proj4Tag3: "JavaScript",
-        proj5Prob: "为了探索快速商务后端的架构...", proj5Title: "Quick Commerce", proj5Desc: "探索快速科技后端世界...", proj5Tag1: "架构", proj5Tag2: "Spring Boot", proj5Tag3: "物流",
-        expDate1: "目前", expRole1: "CivicLink 平台", expComp1: "进行中", expDesc1: "目前正在构建 CivicLink，一个公民问题报告平台。",
+        proj1Prob: "电子商务运营需要太多手动的重复性工作...", proj1Title: "Tverse", proj1Desc: "一个从头开始构建的一体化电子商务ERP系统...", proj2Prob: "街道协议遭到破坏...", proj2Title: "CivicLink", proj2Desc: "一个本地化的仪表板，公民可以在这里无缝地报告问题...", proj3Prob: "科技节难以管理和跟踪收入...", proj3Title: "Tykkit.fr", proj3Desc: "一个强大的校园活动管理系统...", proj4Prob: "维持日常习惯和任务需要一个结构化的系统...", proj4Title: "Rituals", proj4Desc: "一个每周/每天的习惯跟踪器...", proj5Prob: "为了探索快速商务后端的架构...", proj5Title: "Quick Commerce", proj5Desc: "探索快速科技后端世界...", expDate1: "目前", expRole1: "CivicLink 平台", expComp1: "进行中", expDesc1: "目前正在构建 CivicLink，一个公民问题报告平台。",
         expDate2: "03-05-2026", expRole2: "Tverse v1.0", expComp2: "发布旗舰项目", expDesc2: "完成了 Tverse 1.0 版 — 一个多合一的电子商务 ERP 系统。",
         expDate3: "10-04-2026", expRole3: "Rituals AI 平台", expComp3: "个人习惯跟踪器", expDesc3: "开发了 Rituals 以构建日常生活的秩序。",
         expDate4: "05-04-2026", expRole4: "Tykkit.fr", expComp4: "校园活动系统", expDesc4: "发布了 Tykkit.fr，一个强大的大学科技节信息集中平台。",
@@ -101,13 +86,7 @@ window.translations = {
         langSelectHeader: "भाषा चुनें", langSuggest: "अपनी पसंदीदा भाषा चुनें।",
         
         projProblem: "समस्या", projLink: "GitHub →", projLive: "Live →", projBack: "Backend →", projFront: "Frontend →",
-        proj1Prob: "ई-कॉमर्स संचालन में एक्सेल शीट के कारण बहुत अधिक मैन्युअल काम की आवश्यकता थी...", proj1Title: "Tverse", proj1Desc: "एक ई-कॉमर्स ईआरपी जिसे छोटे विक्रेताओं के लिए बनाया गया है...", proj1Tag1: "Microservices", proj1Tag2: "Node.js", proj1Tag3: "Automation",
-        proj2Prob: "बुनियादी ढांचे के मुद्दे और संचार की कमी।", proj2Title: "CivicLink", proj2Desc: "एक नागरिक जुड़ाव मंच जो स्थानीय मुद्दों की रिपोर्ट करने के लिए बनाया गया है।", proj2Tag1: "Java", proj2Tag2: "Spring Boot", proj2Tag3: "Analytics",
-        proj3Prob: "कॉलेज फेस्ट को प्रबंधित करना मुश्किल था।", proj3Title: "Tykkit.fr", proj3Desc: "एक मजबूत परिसर घटना प्रबंधन प्रणाली।", proj3Tag1: "Full-Stack", proj3Tag2: "JavaScript", proj3Tag3: "Java",
-        proj4Prob: "दैनिक दिनचर्या बनाए रखने के लिए एक प्रणाली की आवश्यकता है।", proj4Title: "Rituals", proj4Desc: "एक एआई-संचालित आदत ट्रैकिंग प्लेटफॉर्म।", proj4Tag1: "Java", proj4Tag2: "AI Engine", proj4Tag3: "JavaScript",
-        proj5Prob: "त्वरित वाणिज्य के लॉजिस्टिक्स का अन्वेषण करने के लिए।", proj5Title: "Quick Commerce", proj5Desc: "ब्लिंकिट से प्रेरित एक क्लोन परियोजना।", proj5Tag1: "Architecture", proj5Tag2: "Spring Boot", proj5Tag3: "Logistics",
-        
-        expDate1: "वर्तमान", expRole1: "CivicLink Platform", expComp1: "प्रगति पर है", expDesc1: "नागरिक समस्या रिपोर्टिंग मंच CivicLink का निर्माण।",
+        proj1Prob: "ई-कॉमर्स संचालन में एक्सेल शीट के कारण बहुत अधिक मैन्युअल काम की आवश्यकता थी...", proj1Title: "Tverse", proj1Desc: "एक ई-कॉमर्स ईआरपी जिसे छोटे विक्रेताओं के लिए बनाया गया है...", proj2Prob: "बुनियादी ढांचे के मुद्दे और संचार की कमी।", proj2Title: "CivicLink", proj2Desc: "एक नागरिक जुड़ाव मंच जो स्थानीय मुद्दों की रिपोर्ट करने के लिए बनाया गया है।", proj3Prob: "कॉलेज फेस्ट को प्रबंधित करना मुश्किल था।", proj3Title: "Tykkit.fr", proj3Desc: "एक मजबूत परिसर घटना प्रबंधन प्रणाली।", proj4Prob: "दैनिक दिनचर्या बनाए रखने के लिए एक प्रणाली की आवश्यकता है।", proj4Title: "Rituals", proj4Desc: "एक एआई-संचालित आदत ट्रैकिंग प्लेटफॉर्म।", proj5Prob: "त्वरित वाणिज्य के लॉजिस्टिक्स का अन्वेषण करने के लिए।", proj5Title: "Quick Commerce", proj5Desc: "ब्लिंकिट से प्रेरित एक क्लोन परियोजना।", expDate1: "वर्तमान", expRole1: "CivicLink Platform", expComp1: "प्रगति पर है", expDesc1: "नागरिक समस्या रिपोर्टिंग मंच CivicLink का निर्माण।",
         expDate2: "03-05-2026", expRole2: "Tverse v1.0", expComp2: "फ्लैगशिप प्रोजेक्ट", expDesc2: "Tverse का संस्करण 1.0 पूरा हुआ।",
         expDate3: "10-04-2026", expRole3: "Rituals AI Platform", expComp3: "व्यक्तिगत हैबिट ट्रैकर", expDesc3: "दैनिक दिनचर्या के लिए Rituals विकसित किया।",
         expDate4: "05-04-2026", expRole4: "Tykkit.fr", expComp4: "कैंपस इवेंट सिस्टम", expDesc4: "कॉलेज फेस्ट के लिए Tykkit.fr लॉन्च किया।",
@@ -195,3 +174,4 @@ window.translations = {
         navAbout: "Über mich", navProjects: "Projekte", navProcess: "Prozess", navSkills: "Fähigkeiten", navJourney: "Weg", navContact: "Kontakt", hireMe: "Mich Einstellen"
     }
 };
+

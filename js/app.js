@@ -419,15 +419,17 @@
                 const landmarks = predictions[0].landmarks;
                 
                 const wrist = landmarks[0];
-                const isExtended = (tipIdx, pipIdx) => {
-                    return getDistance(landmarks[tipIdx], wrist) > getDistance(landmarks[pipIdx], wrist);
+                const isExtended = (tipIdx, mcpIdx, threshold = 0.6) => {
+                    const fingerLength = getDistance(landmarks[tipIdx], landmarks[mcpIdx]);
+                    const palmSize = getDistance(landmarks[mcpIdx], wrist);
+                    return fingerLength > (palmSize * threshold);
                 };
                 
-                const isThumbUp = isExtended(4, 2);
-                const isIndexUp = isExtended(8, 6);
-                const isMiddleUp = isExtended(12, 10);
-                const isRingUp = isExtended(16, 14);
-                const isPinkyUp = isExtended(20, 18);
+                const isThumbUp = isExtended(4, 2, 0.5);
+                const isIndexUp = isExtended(8, 5, 0.6);
+                const isMiddleUp = isExtended(12, 9, 0.6);
+                const isRingUp = isExtended(16, 13, 0.6);
+                const isPinkyUp = isExtended(20, 17, 0.6);
                 
                 // Pointing (Index extended) -> Scroll Down
                 if (!isThumbUp && isIndexUp && !isMiddleUp && !isRingUp && !isPinkyUp) {
