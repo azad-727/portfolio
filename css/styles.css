@@ -1507,6 +1507,28 @@ input, textarea {
     border-top: 1px solid var(--color-border-light);
 }
 
+.nazar-battou {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    height: 120px; /* Space for it to hang */
+}
+
+.nimbu-mirchi-icon {
+    height: 100px; /* Made it significantly larger */
+    width: auto;
+    transform-origin: top center; /* Swing from the top */
+    animation: swing 4s ease-in-out infinite;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+}
+
+@keyframes swing {
+    0% { transform: rotate(5deg); }
+    50% { transform: rotate(-5deg); }
+    100% { transform: rotate(5deg); }
+}
+
 /* ---- MODAL ---- */
 .modal-overlay {
     position: fixed;
