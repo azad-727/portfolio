@@ -16,11 +16,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
     
-    <!-- TensorFlow.js and HandPose Model -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/handpose"></script>
+    <!-- MediaPipe Hands (replaces deprecated TF.js handpose) -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
     <!-- Side Mountains (Background Sketch) -->
@@ -815,13 +813,15 @@
     <!-- Gesture Control Overlay -->
     <div class="gesture-overlay" id="gestureOverlay" style="display:none;">
         <div class="gesture-feed">
-            <video id="gestureVideo" autoplay playsinline></video>
+            <video id="gestureVideo" autoplay playsinline muted></video>
             <canvas id="gestureCanvas"></canvas>
         </div>
         <div class="gesture-info">
-            <p>✋ Palm — Pause | ☝️ Point — Down | ✌️ Peace — Up | 3️⃣ 3-Fingers — Theme</p>
+            <p>☝️ Down | ✌️ Up | 3️⃣ Theme | ✍️ Draw: L R C P</p>
         </div>
     </div>
+    <!-- Letter Trail Canvas (fullscreen, transparent) -->
+    <canvas id="letterTrailCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;display:none;"></canvas>
 
     <!-- Voice Assistant Overlay (Gemini Live Style) -->
     <div class="voice-overlay" id="voiceOverlay">

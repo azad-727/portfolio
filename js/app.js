@@ -334,11 +334,315 @@
         });
     }
 
-    // ---- GESTURE CONTROL (TensorFlow.js HandPose) ----
+    // ---- GESTURE CONTROL (MediaPipe Hands) ----
     let gestureActive = false;
-    let handposeModel = null;
     let videoStream = null;
+    let mpHands = null;
+    let mpCamera = null;
 
+    // Scroll state
+    let targetScrollVelocity = 0;
+    let currentScrollVelocity = 0;
+    let lastThemeToggle = 0;
+
+    function smoothScrollLoop() {
+        if (targetScrollVelocity !== 0 || Math.abs(currentScrollVelocity) > 0.1) {
+            currentScrollVelocity += (targetScrollVelocity - currentScrollVelocity) * 0.1;
+            window.scrollBy(0, currentScrollVelocity);
+        }
+        requestAnimationFrame(smoothScrollLoop);
+    }
+    smoothScrollLoop();
+
+    // ---- LETTER TRAIL & RECOGNITION ----
+    const letterTrailCanvas = document.getElementById('letterTrailCanvas');
+    const trailCtx = letterTrailCanvas ? letterTrailCanvas.getContext('2d') : null;
+    let letterPath = [];        // [{x, y, t}] — normalized 0-1 coords
+    let isDrawingLetter = false;
+    let drawingTimeout = null;
+    let lastFingerPos = null;
+    const DRAW_MOVE_THRESHOLD = 0.012;  // minimum movement to count as drawing
+    const DRAW_IDLE_MS = 900;           // pause after stop to trigger recognition
+    const MIN_PATH_POINTS = 8;          // minimum points for a valid letter
+
+    function resizeTrailCanvas() {
+        if (!letterTrailCanvas) return;
+        letterTrailCanvas.width = window.innerWidth;
+        letterTrailCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeTrailCanvas);
+
+    function clearTrail() {
+        if (!trailCtx || !letterTrailCanvas) return;
+        trailCtx.clearRect(0, 0, letterTrailCanvas.width, letterTrailCanvas.height);
+    }
+
+    function drawTrail() {
+        if (!trailCtx || letterPath.length < 2) return;
+        clearTrail();
+        const w = letterTrailCanvas.width;
+        const h = letterTrailCanvas.height;
+
+        trailCtx.beginPath();
+        // Mirror X because camera is flipped
+        trailCtx.moveTo((1 - letterPath[0].x) * w, letterPath[0].y * h);
+        for (let i = 1; i < letterPath.length; i++) {
+            trailCtx.lineTo((1 - letterPath[i].x) * w, letterPath[i].y * h);
+        }
+        trailCtx.strokeStyle = 'rgba(var(--color-accent-rgb, 100, 100, 255), 0.9)';
+        trailCtx.lineWidth = 4;
+        trailCtx.lineCap = 'round';
+        trailCtx.lineJoin = 'round';
+        trailCtx.shadowColor = 'var(--color-accent, #6464ff)';
+        trailCtx.shadowBlur = 12;
+        trailCtx.stroke();
+    }
+
+    function showGestureToast(msg) {
+        const existing = document.getElementById('gesture-toast');
+        if (existing) existing.remove();
+        const toast = document.createElement('div');
+        toast.id = 'gesture-toast';
+        toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.8);background:var(--color-bg);color:var(--color-text);padding:20px 32px;border-radius:16px;z-index:10001;box-shadow:0 8px 32px rgba(0,0,0,0.4);font-family:inherit;font-size:18px;font-weight:600;text-align:center;border:1.5px solid var(--color-accent, #6464ff);opacity:0;transition:all 0.3s ease;';
+        toast.textContent = msg;
+        document.body.appendChild(toast);
+        requestAnimationFrame(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translate(-50%,-50%) scale(1)';
+        });
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translate(-50%,-50%) scale(0.8)';
+            setTimeout(() => toast.remove(), 300);
+        }, 2000);
+    }
+
+    function recognizeLetter(path) {
+        if (path.length < MIN_PATH_POINTS) return null;
+
+        // Normalize path to bounding box 0-1
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        path.forEach(p => {
+            minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+            minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+        });
+        const rangeX = maxX - minX || 0.001;
+        const rangeY = maxY - minY || 0.001;
+        const norm = path.map(p => ({
+            x: (p.x - minX) / rangeX,
+            y: (p.y - minY) / rangeY
+        }));
+
+        const aspectRatio = rangeX / rangeY;
+
+        // Compute direction changes and overall trajectory
+        let totalDx = 0, totalDy = 0;
+        let dirChangesX = 0, dirChangesY = 0;
+        let prevDx = 0, prevDy = 0;
+        for (let i = 1; i < norm.length; i++) {
+            const dx = norm[i].x - norm[i-1].x;
+            const dy = norm[i].y - norm[i-1].y;
+            totalDx += dx; totalDy += dy;
+            if (i > 1) {
+                if (Math.sign(dx) !== 0 && Math.sign(dx) !== Math.sign(prevDx)) dirChangesX++;
+                if (Math.sign(dy) !== 0 && Math.sign(dy) !== Math.sign(prevDy)) dirChangesY++;
+            }
+            prevDx = dx; prevDy = dy;
+        }
+
+        const startPt = norm[0];
+        const endPt = norm[norm.length - 1];
+
+        // Sample 3 vertical zones
+        const topThird = norm.filter(p => p.y < 0.33);
+        const midThird = norm.filter(p => p.y >= 0.33 && p.y < 0.66);
+        const botThird = norm.filter(p => p.y >= 0.66);
+        const avgXTop = topThird.length ? topThird.reduce((s,p)=>s+p.x,0)/topThird.length : 0.5;
+        const avgXMid = midThird.length ? midThird.reduce((s,p)=>s+p.x,0)/midThird.length : 0.5;
+        const avgXBot = botThird.length ? botThird.reduce((s,p)=>s+p.x,0)/botThird.length : 0.5;
+
+        // --- L DETECTION ---
+        // L = Down stroke then right stroke. Start top-left, end bottom-right.
+        // Mostly vertical then horizontal. Net direction: right and down.
+        if (startPt.y < 0.3 && endPt.y > 0.6 && endPt.x > 0.5 &&
+            dirChangesX <= 3 && dirChangesY <= 3) {
+            // Check there's a clear corner: first half mostly vertical, second half mostly horizontal
+            const mid = Math.floor(norm.length / 2);
+            const firstHalfDy = Math.abs(norm[mid].y - norm[0].y);
+            const secondHalfDx = Math.abs(norm[norm.length-1].x - norm[mid].x);
+            if (firstHalfDy > 0.3 && secondHalfDx > 0.2) {
+                return 'L';
+            }
+        }
+
+        // --- P DETECTION ---
+        // P = Down stroke then a loop/curve at top right, ending mid-left.
+        // Start top, has a bump to the right in the top region.
+        if (startPt.y < 0.35 && avgXTop > 0.3 && dirChangesX >= 1) {
+            // P has right-side content at top but not at bottom
+            const rightTopPoints = topThird.filter(p => p.x > 0.5).length;
+            const rightBotPoints = botThird.filter(p => p.x > 0.5).length;
+            if (rightTopPoints > topThird.length * 0.2 && rightBotPoints < botThird.length * 0.3) {
+                return 'P';
+            }
+        }
+
+        // --- R DETECTION ---
+        // R = Like P but with a diagonal leg at bottom right. End point far right and down.
+        if (startPt.y < 0.35 && dirChangesX >= 1) {
+            const rightTopPoints = topThird.filter(p => p.x > 0.5).length;
+            if (rightTopPoints > topThird.length * 0.2 && endPt.x > 0.5 && endPt.y > 0.6) {
+                return 'R';
+            }
+        }
+
+        // --- C DETECTION ---
+        // C = Curved arc, starts right, sweeps left, ends right. Open on the right side.
+        // Direction changes in X, mostly smooth in Y.
+        if (dirChangesX >= 1 && dirChangesY <= 5) {
+            // C goes: top-right → left → bottom-right
+            if (startPt.x > 0.4 && avgXMid < 0.5 && endPt.x > 0.3) {
+                const leftPoints = norm.filter(p => p.x < 0.4).length;
+                if (leftPoints > norm.length * 0.2) {
+                    return 'C';
+                }
+            }
+        }
+
+        return null;
+    }
+
+    function executeLetterAction(letter) {
+        const actions = {
+            'L': { url: 'https://linkedin.com/in/azad-727', label: '🔗 Opening LinkedIn...' },
+            'R': { url: 'https://drive.google.com/file/d/1Spi1A-WnD8az35EzA-en18wNk3JS-3Yb/view', label: '📄 Opening Resume...' },
+            'C': { url: 'mailto:azad.mukesh727@gmail.com', label: '✉️ Opening Email...' },
+            'P': { section: 'projects', label: '🚀 Scrolling to Projects...' }
+        };
+        const action = actions[letter];
+        if (!action) return;
+
+        showGestureToast(action.label);
+        setTimeout(() => {
+            if (action.url) {
+                window.open(action.url, '_blank');
+            } else if (action.section) {
+                const el = document.getElementById(action.section);
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }
+        }, 600);
+    }
+
+    function processFingerTip(x, y) {
+        // x, y are normalized 0-1 from MediaPipe
+        const now = Date.now();
+        const dist = lastFingerPos
+            ? Math.sqrt(Math.pow(x - lastFingerPos.x, 2) + Math.pow(y - lastFingerPos.y, 2))
+            : 999;
+
+        if (dist > DRAW_MOVE_THRESHOLD) {
+            // Finger is moving — record the trail
+            if (!isDrawingLetter) {
+                isDrawingLetter = true;
+                letterPath = [];
+                if (letterTrailCanvas) {
+                    resizeTrailCanvas();
+                    letterTrailCanvas.style.display = 'block';
+                }
+            }
+            letterPath.push({ x, y, t: now });
+            lastFingerPos = { x, y };
+            drawTrail();
+
+            // Reset the idle timer
+            if (drawingTimeout) clearTimeout(drawingTimeout);
+            drawingTimeout = setTimeout(() => {
+                // Finger stopped — try to recognize
+                const letter = recognizeLetter(letterPath);
+                if (letter) {
+                    executeLetterAction(letter);
+                } else if (letterPath.length >= MIN_PATH_POINTS) {
+                    showGestureToast('❓ Letter not recognized. Try L, R, C, or P');
+                }
+                // Reset
+                isDrawingLetter = false;
+                letterPath = [];
+                lastFingerPos = null;
+                setTimeout(() => {
+                    clearTrail();
+                    if (letterTrailCanvas) letterTrailCanvas.style.display = 'none';
+                }, 1200);
+            }, DRAW_IDLE_MS);
+        }
+    }
+
+    // ---- FINGER DETECTION HELPERS ----
+    function mpGetDist(a, b) {
+        return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
+    }
+
+    function isFingerExtended(landmarks, tipIdx, pipIdx, mcpIdx) {
+        // A finger is extended if tip is further from wrist than pip
+        const tip = landmarks[tipIdx];
+        const pip = landmarks[pipIdx];
+        const mcp = landmarks[mcpIdx];
+        const wrist = landmarks[0];
+        const tipDist = mpGetDist(tip, wrist);
+        const pipDist = mpGetDist(pip, wrist);
+        const mcpDist = mpGetDist(mcp, wrist);
+        return tipDist > pipDist && tipDist > mcpDist * 0.9;
+    }
+
+    function processHandResults(results) {
+        if (!gestureActive) return;
+
+        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+            const lm = results.multiHandLandmarks[0];
+
+            // Check finger extension (MediaPipe uses normalized 0-1 coords)
+            // Thumb: 4(tip), 3(ip), 2(mcp)
+            // Index: 8(tip), 6(pip), 5(mcp)
+            // Middle: 12(tip), 10(pip), 9(mcp)
+            // Ring: 16(tip), 14(pip), 13(mcp)
+            // Pinky: 20(tip), 18(pip), 17(mcp)
+            const isThumbUp = mpGetDist(lm[4], lm[0]) > mpGetDist(lm[3], lm[0]) * 1.1;
+            const isIndexUp = isFingerExtended(lm, 8, 6, 5);
+            const isMiddleUp = isFingerExtended(lm, 12, 10, 9);
+            const isRingUp = isFingerExtended(lm, 16, 14, 13);
+            const isPinkyUp = isFingerExtended(lm, 20, 18, 17);
+
+            const extendedCount = [isIndexUp, isMiddleUp, isRingUp, isPinkyUp].filter(Boolean).length;
+
+            // Only index finger — Scroll Down + draw letter trail
+            if (isIndexUp && !isMiddleUp && !isRingUp && !isPinkyUp) {
+                targetScrollVelocity = 15;
+                processFingerTip(lm[8].x, lm[8].y);
+            }
+            // Peace sign (index + middle) — Scroll Up
+            else if (isIndexUp && isMiddleUp && !isRingUp && !isPinkyUp) {
+                targetScrollVelocity = -15;
+            }
+            // Three fingers — Toggle Theme
+            else if (isIndexUp && isMiddleUp && isRingUp && !isPinkyUp) {
+                targetScrollVelocity = 0;
+                const now = Date.now();
+                if (now - lastThemeToggle > 2000) {
+                    const root = document.documentElement;
+                    const newTheme = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                    root.setAttribute('data-theme', newTheme);
+                    lastThemeToggle = now;
+                }
+            }
+            // Everything else — Stop scrolling
+            else {
+                targetScrollVelocity = 0;
+            }
+        } else {
+            targetScrollVelocity = 0;
+        }
+    }
+
+    // ---- MEDIAPIPE INITIALIZATION ----
     async function initGestureControl() {
         if (!gestureToggle) return;
 
@@ -348,117 +652,80 @@
 
             if (gestureActive) {
                 if (gestureOverlay) gestureOverlay.style.display = 'block';
+                const btnOriginalText = gestureToggle.innerHTML;
+                gestureToggle.innerHTML = '<span style="font-size:12px;">Loading...</span>';
+
                 try {
-                    const btnOriginalText = gestureToggle.innerHTML;
-                    gestureToggle.innerHTML = '<span style="font-size:12px;">Loading...</span>';
-                    
-                    videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
                     const video = $('#gestureVideo');
-                    if (video) {
-                        video.srcObject = videoStream;
-                        // For video to play in iOS/Chrome, it needs some properties
-                        video.setAttribute('autoplay', '');
-                        video.setAttribute('muted', '');
-                        video.setAttribute('playsinline', '');
-                        video.play();
+                    if (!video) throw new Error('Video element not found');
+
+                    // Request camera
+                    videoStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } }
+                    });
+                    video.srcObject = videoStream;
+                    video.setAttribute('autoplay', '');
+                    video.setAttribute('muted', '');
+                    video.setAttribute('playsinline', '');
+                    await video.play();
+
+                    // Initialize MediaPipe Hands (only once)
+                    if (!mpHands) {
+                        mpHands = new Hands({
+                            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/${file}`
+                        });
+                        mpHands.setOptions({
+                            maxNumHands: 1,
+                            modelComplexity: 0,   // 0 = lite (fastest, works on mobile)
+                            minDetectionConfidence: 0.6,
+                            minTrackingConfidence: 0.5
+                        });
+                        mpHands.onResults(processHandResults);
                     }
-                    
-                    // Load TFJS Handpose Model if not loaded
-                    if (!handposeModel) {
-                        handposeModel = await handpose.load();
-                    }
-                    
+
+                    // Start camera loop
+                    mpCamera = new Camera(video, {
+                        onFrame: async () => {
+                            if (gestureActive && mpHands) {
+                                await mpHands.send({ image: video });
+                            }
+                        },
+                        width: 320,
+                        height: 240
+                    });
+                    await mpCamera.start();
+
                     gestureToggle.innerHTML = btnOriginalText;
-                    console.log('Gesture control activated.');
-                    
-                    detectGesture(video);
+                    console.log('Gesture control activated (MediaPipe).');
 
                 } catch (err) {
-                    console.warn('Camera access denied or TFJS failed:', err);
+                    console.warn('Camera access denied or MediaPipe failed:', err);
                     alert('Could not start gesture control. Check camera permissions or ensure you are on HTTPS.');
                     gestureActive = false;
                     gestureToggle.classList.remove('active');
+                    gestureToggle.innerHTML = btnOriginalText;
                     if (gestureOverlay) gestureOverlay.style.display = 'none';
                 }
             } else {
+                // Deactivate
                 if (gestureOverlay) gestureOverlay.style.display = 'none';
+                if (letterTrailCanvas) letterTrailCanvas.style.display = 'none';
+                if (mpCamera) {
+                    mpCamera.stop();
+                    mpCamera = null;
+                }
                 if (videoStream) {
                     videoStream.getTracks().forEach(track => track.stop());
                     videoStream = null;
                 }
+                clearTrail();
+                isDrawingLetter = false;
+                letterPath = [];
+                lastFingerPos = null;
+                if (drawingTimeout) clearTimeout(drawingTimeout);
                 console.log('Gesture control deactivated.');
             }
         });
-    }
-
-    let lastThemeToggle = 0;
-
-    // Helper to calculate 2D distance between two landmarks
-    function getDistance(p1, p2) {
-        return Math.sqrt(Math.pow(p1[0] - p2[0], 2) + Math.pow(p1[1] - p2[1], 2));
-    }
-
-    let targetScrollVelocity = 0;
-    let currentScrollVelocity = 0;
-
-    function smoothScrollLoop() {
-        if (targetScrollVelocity !== 0 || Math.abs(currentScrollVelocity) > 0.1) {
-            currentScrollVelocity += (targetScrollVelocity - currentScrollVelocity) * 0.1;
-            window.scrollBy(0, currentScrollVelocity);
-        }
-        requestAnimationFrame(smoothScrollLoop);
-    }
-    smoothScrollLoop(); // Start the loop immediately
-
-    async function detectGesture(video) {
-        if (!gestureActive) return;
-        
-        if (video.readyState >= 2) {
-            const predictions = await handposeModel.estimateHands(video);
-            if (predictions.length > 0) {
-                const landmarks = predictions[0].landmarks;
-                
-                const wrist = landmarks[0];
-                const isExtended = (tipIdx, mcpIdx, threshold = 0.6) => {
-                    const fingerLength = getDistance(landmarks[tipIdx], landmarks[mcpIdx]);
-                    const palmSize = getDistance(landmarks[mcpIdx], wrist);
-                    return fingerLength > (palmSize * threshold);
-                };
-                
-                const isThumbUp = isExtended(4, 2, 0.5);
-                const isIndexUp = isExtended(8, 5, 0.6);
-                const isMiddleUp = isExtended(12, 9, 0.6);
-                const isRingUp = isExtended(16, 13, 0.6);
-                const isPinkyUp = isExtended(20, 17, 0.6);
-                
-                // Pointing (Index extended) -> Scroll Down
-                if (!isThumbUp && isIndexUp && !isMiddleUp && !isRingUp && !isPinkyUp) {
-                    targetScrollVelocity = 20;
-                } 
-                // Peace sign (Index and Middle extended) -> Scroll Up
-                else if (!isThumbUp && isIndexUp && isMiddleUp && !isRingUp && !isPinkyUp) {
-                    targetScrollVelocity = -20;
-                }
-                // Three Fingers (Index, Middle, Ring extended) -> Toggle Theme
-                else if (!isThumbUp && isIndexUp && isMiddleUp && isRingUp && !isPinkyUp) {
-                    targetScrollVelocity = 0;
-                    const now = Date.now();
-                    if (now - lastThemeToggle > 2000) {
-                        const root = document.documentElement;
-                        const newTheme = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-                        root.setAttribute('data-theme', newTheme);
-                        lastThemeToggle = now;
-                    }
-                } else {
-                    // Open Palm / Closed fist -> Stop scrolling
-                    targetScrollVelocity = 0;
-                }
-            } else {
-                targetScrollVelocity = 0;
-            }
-        }
-        
-        requestAnimationFrame(() => detectGesture(video));
     }
 
     // ---- KEYBOARD NAVIGATION ----
@@ -767,7 +1034,7 @@
             if (!gestureActive) {
                 const toast = document.createElement('div');
                 toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:var(--color-bg);color:var(--color-text);padding:16px 24px;border-radius:12px;z-index:10000;box-shadow:var(--shadow-lg);font-family:inherit;font-size:14px;transform:translateY(150px);opacity:0;transition:all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);max-width:320px;border:1px solid var(--color-border);';
-                toast.innerHTML = '<strong>✨ Magic Awaits!</strong><br><p style="margin-top:8px;color:var(--color-text-secondary);line-height:1.4;">Click the hand icon in the navbar to control this website using hand gestures.</p>';
+                toast.innerHTML = '<strong>✨ Magic Awaits!</strong><br><p style="margin-top:8px;color:var(--color-text-secondary);line-height:1.4;">Click the hand icon in the navbar to control this website with gestures. Draw <b>L</b> for LinkedIn, <b>R</b> for Resume, <b>C</b> for Contact, <b>P</b> for Projects!</p>';
                 document.body.appendChild(toast);
                 
                 // Show toast
