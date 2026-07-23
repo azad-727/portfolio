@@ -357,13 +357,10 @@
     // ---- LETTER TRAIL & RECOGNITION ----
     const letterTrailCanvas = document.getElementById('letterTrailCanvas');
     const trailCtx = letterTrailCanvas ? letterTrailCanvas.getContext('2d') : null;
-    let letterPath = [];        // [{x, y, t}] — normalized 0-1 coords
-    let isDrawingLetter = false;
-    let drawingTimeout = null;
-    let lastFingerPos = null;
-    const DRAW_MOVE_THRESHOLD = 0.012;  // minimum movement to count as drawing
-    const DRAW_IDLE_MS = 900;           // pause after stop to trigger recognition
-    const MIN_PATH_POINTS = 8;          // minimum points for a valid letter
+    let letterPath = [];
+    let drawMode = false;          // TRUE = drawing mode, FALSE = scroll/gesture mode
+    let lastThumbToggle = 0;       // Cooldown for thumbs-up toggle
+    const MIN_PATH_POINTS = 8;
 
     function resizeTrailCanvas() {
         if (!letterTrailCanvas) return;
@@ -384,27 +381,26 @@
         const h = letterTrailCanvas.height;
 
         trailCtx.beginPath();
-        // Mirror X because camera is flipped
         trailCtx.moveTo((1 - letterPath[0].x) * w, letterPath[0].y * h);
         for (let i = 1; i < letterPath.length; i++) {
             trailCtx.lineTo((1 - letterPath[i].x) * w, letterPath[i].y * h);
         }
-        trailCtx.strokeStyle = 'rgba(var(--color-accent-rgb, 100, 100, 255), 0.9)';
+        trailCtx.strokeStyle = '#00ccff';
         trailCtx.lineWidth = 4;
         trailCtx.lineCap = 'round';
         trailCtx.lineJoin = 'round';
-        trailCtx.shadowColor = 'var(--color-accent, #6464ff)';
-        trailCtx.shadowBlur = 12;
+        trailCtx.shadowColor = '#00ccff';
+        trailCtx.shadowBlur = 14;
         trailCtx.stroke();
     }
 
-    function showGestureToast(msg) {
+    function showGestureToast(msg, duration) {
         const existing = document.getElementById('gesture-toast');
         if (existing) existing.remove();
         const toast = document.createElement('div');
         toast.id = 'gesture-toast';
-        toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.8);background:var(--color-bg);color:var(--color-text);padding:20px 32px;border-radius:16px;z-index:10001;box-shadow:0 8px 32px rgba(0,0,0,0.4);font-family:inherit;font-size:18px;font-weight:600;text-align:center;border:1.5px solid var(--color-accent, #6464ff);opacity:0;transition:all 0.3s ease;';
-        toast.textContent = msg;
+        toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.8);background:var(--color-bg);color:var(--color-text);padding:20px 32px;border-radius:16px;z-index:10001;box-shadow:0 8px 32px rgba(0,0,0,0.4);font-family:inherit;font-size:18px;font-weight:600;text-align:center;border:1.5px solid var(--color-accent, #00ccff);opacity:0;transition:all 0.3s ease;';
+        toast.innerHTML = msg;
         document.body.appendChild(toast);
         requestAnimationFrame(() => {
             toast.style.opacity = '1';
@@ -414,13 +410,68 @@
             toast.style.opacity = '0';
             toast.style.transform = 'translate(-50%,-50%) scale(0.8)';
             setTimeout(() => toast.remove(), 300);
-        }, 2000);
+        }, duration || 2000);
+    }
+
+    function showDrawModeIndicator(active) {
+        let indicator = document.getElementById('draw-mode-indicator');
+        if (active) {
+            if (!indicator) {
+                indicator = document.createElement('div');
+                indicator.id = 'draw-mode-indicator';
+                indicator.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,204,255,0.15);color:#00ccff;padding:10px 24px;border-radius:30px;z-index:10001;font-family:inherit;font-size:14px;font-weight:600;text-align:center;border:1.5px solid #00ccff;backdrop-filter:blur(8px);letter-spacing:1px;animation:pulse-draw 1.5s infinite;';
+                indicator.innerHTML = '✍️ DRAW MODE — trace a letter (👍 to recognize, ✊ to cancel)';
+                // Add pulse animation
+                const style = document.createElement('style');
+                style.id = 'draw-mode-style';
+                style.textContent = '@keyframes pulse-draw{0%,100%{box-shadow:0 0 8px rgba(0,204,255,0.3)}50%{box-shadow:0 0 20px rgba(0,204,255,0.6)}}';
+                document.head.appendChild(style);
+                document.body.appendChild(indicator);
+            }
+        } else {
+            if (indicator) indicator.remove();
+            const style = document.getElementById('draw-mode-style');
+            if (style) style.remove();
+        }
+    }
+
+    function enterDrawMode() {
+        drawMode = true;
+        letterPath = [];
+        if (letterTrailCanvas) {
+            resizeTrailCanvas();
+            letterTrailCanvas.style.display = 'block';
+        }
+        clearTrail();
+        showDrawModeIndicator(true);
+        showGestureToast('✍️ Draw Mode ON — trace L, R, C, or P', 1500);
+    }
+
+    function exitDrawMode(recognize) {
+        drawMode = false;
+        showDrawModeIndicator(false);
+
+        if (recognize && letterPath.length >= MIN_PATH_POINTS) {
+            const letter = recognizeLetter(letterPath);
+            if (letter) {
+                executeLetterAction(letter);
+            } else {
+                showGestureToast('❓ Not recognized. Try: L, R, C, or P');
+            }
+        } else if (!recognize) {
+            showGestureToast('✊ Draw cancelled', 1200);
+        }
+
+        letterPath = [];
+        setTimeout(() => {
+            clearTrail();
+            if (letterTrailCanvas) letterTrailCanvas.style.display = 'none';
+        }, 800);
     }
 
     function recognizeLetter(path) {
         if (path.length < MIN_PATH_POINTS) return null;
 
-        // Normalize path to bounding box 0-1
         let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
         path.forEach(p => {
             minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
@@ -433,16 +484,11 @@
             y: (p.y - minY) / rangeY
         }));
 
-        const aspectRatio = rangeX / rangeY;
-
-        // Compute direction changes and overall trajectory
-        let totalDx = 0, totalDy = 0;
         let dirChangesX = 0, dirChangesY = 0;
         let prevDx = 0, prevDy = 0;
         for (let i = 1; i < norm.length; i++) {
             const dx = norm[i].x - norm[i-1].x;
             const dy = norm[i].y - norm[i-1].y;
-            totalDx += dx; totalDy += dy;
             if (i > 1) {
                 if (Math.sign(dx) !== 0 && Math.sign(dx) !== Math.sign(prevDx)) dirChangesX++;
                 if (Math.sign(dy) !== 0 && Math.sign(dy) !== Math.sign(prevDy)) dirChangesY++;
@@ -453,59 +499,44 @@
         const startPt = norm[0];
         const endPt = norm[norm.length - 1];
 
-        // Sample 3 vertical zones
         const topThird = norm.filter(p => p.y < 0.33);
-        const midThird = norm.filter(p => p.y >= 0.33 && p.y < 0.66);
         const botThird = norm.filter(p => p.y >= 0.66);
-        const avgXTop = topThird.length ? topThird.reduce((s,p)=>s+p.x,0)/topThird.length : 0.5;
-        const avgXMid = midThird.length ? midThird.reduce((s,p)=>s+p.x,0)/midThird.length : 0.5;
-        const avgXBot = botThird.length ? botThird.reduce((s,p)=>s+p.x,0)/botThird.length : 0.5;
+        const avgXMid = norm.filter(p => p.y >= 0.33 && p.y < 0.66)
+            .reduce((s,p,_,a) => s + p.x / a.length, 0) || 0.5;
 
-        // --- L DETECTION ---
-        // L = Down stroke then right stroke. Start top-left, end bottom-right.
-        // Mostly vertical then horizontal. Net direction: right and down.
+        // L: Down then right
         if (startPt.y < 0.3 && endPt.y > 0.6 && endPt.x > 0.5 &&
             dirChangesX <= 3 && dirChangesY <= 3) {
-            // Check there's a clear corner: first half mostly vertical, second half mostly horizontal
             const mid = Math.floor(norm.length / 2);
-            const firstHalfDy = Math.abs(norm[mid].y - norm[0].y);
-            const secondHalfDx = Math.abs(norm[norm.length-1].x - norm[mid].x);
-            if (firstHalfDy > 0.3 && secondHalfDx > 0.2) {
+            if (Math.abs(norm[mid].y - norm[0].y) > 0.3 && 
+                Math.abs(norm[norm.length-1].x - norm[mid].x) > 0.2) {
                 return 'L';
             }
         }
 
-        // --- P DETECTION ---
-        // P = Down stroke then a loop/curve at top right, ending mid-left.
-        // Start top, has a bump to the right in the top region.
-        if (startPt.y < 0.35 && avgXTop > 0.3 && dirChangesX >= 1) {
-            // P has right-side content at top but not at bottom
-            const rightTopPoints = topThird.filter(p => p.x > 0.5).length;
-            const rightBotPoints = botThird.filter(p => p.x > 0.5).length;
-            if (rightTopPoints > topThird.length * 0.2 && rightBotPoints < botThird.length * 0.3) {
+        // P: Down stroke + bump right at top only
+        if (startPt.y < 0.35 && dirChangesX >= 1) {
+            const rightTop = topThird.filter(p => p.x > 0.5).length;
+            const rightBot = botThird.filter(p => p.x > 0.5).length;
+            if (rightTop > topThird.length * 0.2 && rightBot < botThird.length * 0.3 &&
+                !(endPt.x > 0.5 && endPt.y > 0.6)) {
                 return 'P';
             }
         }
 
-        // --- R DETECTION ---
-        // R = Like P but with a diagonal leg at bottom right. End point far right and down.
+        // R: Like P but ends bottom-right (has a leg)
         if (startPt.y < 0.35 && dirChangesX >= 1) {
-            const rightTopPoints = topThird.filter(p => p.x > 0.5).length;
-            if (rightTopPoints > topThird.length * 0.2 && endPt.x > 0.5 && endPt.y > 0.6) {
+            const rightTop = topThird.filter(p => p.x > 0.5).length;
+            if (rightTop > topThird.length * 0.2 && endPt.x > 0.5 && endPt.y > 0.6) {
                 return 'R';
             }
         }
 
-        // --- C DETECTION ---
-        // C = Curved arc, starts right, sweeps left, ends right. Open on the right side.
-        // Direction changes in X, mostly smooth in Y.
-        if (dirChangesX >= 1 && dirChangesY <= 5) {
-            // C goes: top-right → left → bottom-right
-            if (startPt.x > 0.4 && avgXMid < 0.5 && endPt.x > 0.3) {
-                const leftPoints = norm.filter(p => p.x < 0.4).length;
-                if (leftPoints > norm.length * 0.2) {
-                    return 'C';
-                }
+        // C: Arc — starts right, curves left, ends right
+        if (dirChangesX >= 1 && dirChangesY <= 5 &&
+            startPt.x > 0.4 && avgXMid < 0.5 && endPt.x > 0.3) {
+            if (norm.filter(p => p.x < 0.4).length > norm.length * 0.2) {
+                return 'C';
             }
         }
 
@@ -533,56 +564,12 @@
         }, 600);
     }
 
-    function processFingerTip(x, y) {
-        // x, y are normalized 0-1 from MediaPipe
-        const now = Date.now();
-        const dist = lastFingerPos
-            ? Math.sqrt(Math.pow(x - lastFingerPos.x, 2) + Math.pow(y - lastFingerPos.y, 2))
-            : 999;
-
-        if (dist > DRAW_MOVE_THRESHOLD) {
-            // Finger is moving — record the trail
-            if (!isDrawingLetter) {
-                isDrawingLetter = true;
-                letterPath = [];
-                if (letterTrailCanvas) {
-                    resizeTrailCanvas();
-                    letterTrailCanvas.style.display = 'block';
-                }
-            }
-            letterPath.push({ x, y, t: now });
-            lastFingerPos = { x, y };
-            drawTrail();
-
-            // Reset the idle timer
-            if (drawingTimeout) clearTimeout(drawingTimeout);
-            drawingTimeout = setTimeout(() => {
-                // Finger stopped — try to recognize
-                const letter = recognizeLetter(letterPath);
-                if (letter) {
-                    executeLetterAction(letter);
-                } else if (letterPath.length >= MIN_PATH_POINTS) {
-                    showGestureToast('❓ Letter not recognized. Try L, R, C, or P');
-                }
-                // Reset
-                isDrawingLetter = false;
-                letterPath = [];
-                lastFingerPos = null;
-                setTimeout(() => {
-                    clearTrail();
-                    if (letterTrailCanvas) letterTrailCanvas.style.display = 'none';
-                }, 1200);
-            }, DRAW_IDLE_MS);
-        }
-    }
-
     // ---- FINGER DETECTION HELPERS ----
     function mpGetDist(a, b) {
         return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
     }
 
     function isFingerExtended(landmarks, tipIdx, pipIdx, mcpIdx) {
-        // A finger is extended if tip is further from wrist than pip
         const tip = landmarks[tipIdx];
         const pip = landmarks[pipIdx];
         const mcp = landmarks[mcpIdx];
@@ -599,30 +586,58 @@
         if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
             const lm = results.multiHandLandmarks[0];
 
-            // Check finger extension (MediaPipe uses normalized 0-1 coords)
-            // Thumb: 4(tip), 3(ip), 2(mcp)
-            // Index: 8(tip), 6(pip), 5(mcp)
-            // Middle: 12(tip), 10(pip), 9(mcp)
-            // Ring: 16(tip), 14(pip), 13(mcp)
-            // Pinky: 20(tip), 18(pip), 17(mcp)
             const isThumbUp = mpGetDist(lm[4], lm[0]) > mpGetDist(lm[3], lm[0]) * 1.1;
             const isIndexUp = isFingerExtended(lm, 8, 6, 5);
             const isMiddleUp = isFingerExtended(lm, 12, 10, 9);
             const isRingUp = isFingerExtended(lm, 16, 14, 13);
             const isPinkyUp = isFingerExtended(lm, 20, 18, 17);
 
-            const extendedCount = [isIndexUp, isMiddleUp, isRingUp, isPinkyUp].filter(Boolean).length;
+            const allFingersClosed = !isIndexUp && !isMiddleUp && !isRingUp && !isPinkyUp;
 
-            // Only index finger — Scroll Down + draw letter trail
+            // ====== THUMBS UP = TOGGLE DRAW MODE ======
+            if (isThumbUp && allFingersClosed) {
+                const now = Date.now();
+                if (now - lastThumbToggle > 2000) {  // 2 second cooldown
+                    lastThumbToggle = now;
+                    if (!drawMode) {
+                        enterDrawMode();
+                    } else {
+                        // Thumbs up while in draw mode = recognize & exit
+                        exitDrawMode(true);
+                    }
+                }
+                targetScrollVelocity = 0;
+                return;
+            }
+
+            // ====== DRAW MODE: Index finger traces letters ======
+            if (drawMode) {
+                // Closed fist (no thumb) = cancel draw
+                if (!isThumbUp && allFingersClosed) {
+                    exitDrawMode(false);
+                    return;
+                }
+
+                // Index finger up = draw
+                if (isIndexUp) {
+                    letterPath.push({ x: lm[8].x, y: lm[8].y });
+                    drawTrail();
+                }
+                // Ignore all other gestures in draw mode
+                targetScrollVelocity = 0;
+                return;
+            }
+
+            // ====== NORMAL MODE: Scroll & Theme gestures ======
+            // Only index → Scroll Down
             if (isIndexUp && !isMiddleUp && !isRingUp && !isPinkyUp) {
                 targetScrollVelocity = 15;
-                processFingerTip(lm[8].x, lm[8].y);
             }
-            // Peace sign (index + middle) — Scroll Up
+            // Peace sign → Scroll Up
             else if (isIndexUp && isMiddleUp && !isRingUp && !isPinkyUp) {
                 targetScrollVelocity = -15;
             }
-            // Three fingers — Toggle Theme
+            // Three fingers → Toggle Theme
             else if (isIndexUp && isMiddleUp && isRingUp && !isPinkyUp) {
                 targetScrollVelocity = 0;
                 const now = Date.now();
@@ -633,7 +648,7 @@
                     lastThemeToggle = now;
                 }
             }
-            // Everything else — Stop scrolling
+            // Everything else → Stop
             else {
                 targetScrollVelocity = 0;
             }
@@ -719,10 +734,9 @@
                     videoStream = null;
                 }
                 clearTrail();
-                isDrawingLetter = false;
+                drawMode = false;
                 letterPath = [];
-                lastFingerPos = null;
-                if (drawingTimeout) clearTimeout(drawingTimeout);
+                showDrawModeIndicator(false);
                 console.log('Gesture control deactivated.');
             }
         });
