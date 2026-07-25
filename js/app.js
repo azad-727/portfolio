@@ -562,6 +562,122 @@
         setTimeout(typeWriter, 400);
     }
 
+    // ---- MULTILINGUAL & IP GEOLOCATION ----
+    // Translations are now loaded from js/i18n.js (window.translations)
+    
+    const countryToLang = {
+        'IN': 'hi',
+        'CN': 'zh',
+        'ES': 'es', 'MX': 'es', 'AR': 'es',
+        'FR': 'fr',
+        'SA': 'ar', 'AE': 'ar', 'EG': 'ar',
+        'BD': 'bn',
+        'BR': 'pt', 'PT': 'pt',
+        'RU': 'ru',
+        'ID': 'id',
+        'PK': 'ur',
+        'DE': 'de',
+        'US': 'en', 'GB': 'en', 'AU': 'en'
+    };
+
+    let currentLang = localStorage.getItem('azadLang') || 'en';
+
+    function applyLanguage(lang) {
+        currentLang = lang;
+        localStorage.setItem('azadLang', lang);
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (window.translations && window.translations[lang] && window.translations[lang][key]) {
+                if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                    el.placeholder = window.translations[lang][key];
+                } else {
+                    el.innerText = window.translations[lang][key];
+                }
+            } else if (window.translations && window.translations['en'][key]) {
+                if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                    el.placeholder = window.translations['en'][key];
+                } else {
+                    el.innerText = window.translations['en'][key];
+                }
+            }
+        });
+        
+        const langModal = document.getElementById('langModal');
+        if (langModal) {
+            langModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+
+    async function initMultilingual() {
+        window.applyLanguage = applyLanguage;
+        applyLanguage(currentLang);
+        
+        const langToggle = document.getElementById('langToggle');
+        if (langToggle) {
+            langToggle.addEventListener('click', () => {
+                showLangModal(currentLang);
+            });
+        }
+
+        // On first load without preference
+        if (!localStorage.getItem('azadLang')) {
+            try {
+                const res = await fetch('https://ipapi.co/json/');
+                const data = await res.json();
+                const localLang = countryToLang[data.country_code];
+                showLangModal(localLang || 'en');
+            } catch (err) {
+                console.error("Geoloc error", err);
+                showLangModal('en');
+            }
+        }
+    }
+
+    function showLangModal(suggestedLocalLang) {
+        const langModal = document.getElementById('langModal');
+        const optionsContainer = document.getElementById('langOptionsContainer');
+        if (!langModal || !optionsContainer) return;
+
+        const langMap = {
+            'en': 'English (Global)',
+            'zh': 'Mandarin Chinese (中文)',
+            'hi': 'Hindi (हिन्दी)',
+            'es': 'Spanish (Español)',
+            'ar': 'Standard Arabic (العربية)',
+            'fr': 'French (Français)',
+            'bn': 'Bengali (বাংলা)',
+            'pt': 'Portuguese (Português)',
+            'ru': 'Russian (Русский)',
+            'id': 'Indonesian (Bahasa Indonesia)',
+            'ur': 'Urdu (اردو)',
+            'de': 'German (Deutsch)'
+        };
+
+        let optionsHTML = `<button class="lang-btn ${currentLang === 'en' ? 'active' : ''}" onclick="applyLanguage('en')">${langMap['en']}</button>`;
+        
+        if (suggestedLocalLang && suggestedLocalLang !== 'en' && langMap[suggestedLocalLang]) {
+            optionsHTML += `<button class="lang-btn ${currentLang === suggestedLocalLang ? 'active' : ''}" onclick="applyLanguage('${suggestedLocalLang}')">${langMap[suggestedLocalLang]} (Suggested)</button>`;
+        } else {
+            // Default suggestions if location fails or is EN
+            optionsHTML += `<button class="lang-btn ${currentLang === 'hi' ? 'active' : ''}" onclick="applyLanguage('hi')">${langMap['hi']}</button>`;
+            optionsHTML += `<button class="lang-btn ${currentLang === 'zh' ? 'active' : ''}" onclick="applyLanguage('zh')">${langMap['zh']}</button>`;
+            optionsHTML += `<button class="lang-btn ${currentLang === 'es' ? 'active' : ''}" onclick="applyLanguage('es')">${langMap['es']}</button>`;
+        }
+
+        optionsHTML += '<div style="margin: 16px 0; border-top: 1px solid var(--color-border); padding-top: 16px; font-size: 12px; color: var(--color-text-muted);">All Languages</div>';
+        
+        for (const [code, name] of Object.entries(langMap)) {
+            if (code !== 'en' && code !== suggestedLocalLang) {
+                optionsHTML += `<button class="lang-btn ${currentLang === code ? 'active' : ''}" onclick="applyLanguage('${code}')">${name}</button>`;
+            }
+        }
+        
+        optionsContainer.innerHTML = optionsHTML;
+        langModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
 
 
     // ---- MANUAL CONTROLS ----
@@ -672,6 +788,7 @@
         initContactForm();
         initGestureControl();
         initKeyboardNav();
+        initMultilingual();
         initManualControls();
         initVoiceAssistant();
 
