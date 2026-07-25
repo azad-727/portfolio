@@ -2008,3 +2008,25 @@ input, textarea {
     animation: blink 1s step-end infinite;
 }
 @keyframes blink { 50% { opacity: 0; } }
+
+/* ---- GOOGLE TRANSLATE CUSTOMIZATION ---- */
+.goog-te-banner-frame, .goog-te-banner-frame.skiptranslate, iframe.goog-te-banner-frame { display: none !important; visibility: hidden !important; }
+body { top: 0px !important; position: static !important; }
+.goog-logo-link, .goog-te-gadget span, .goog-te-gadget-icon { display: none !important; }
+.goog-te-gadget { color: transparent !important; font-size: 0px !important; }
+.goog-tooltip, .goog-tooltip:hover { display: none !important; }
+.goog-text-highlight { background-color: transparent !important; box-shadow: none !important; }
+#google_translate_element select.goog-te-combo { 
+    background-color: var(--color-bg) !important; 
+    color: var(--color-text) !important; 
+    border: 1.5px solid var(--color-border) !important; 
+    border-radius: 8px !important; 
+    padding: 4px 8px !important; 
+    font-family: inherit !important; 
+    font-size: 13px !important; 
+    outline: none !important; 
+    cursor: pointer !important; 
+    transition: all 0.2s ease-in-out !important; 
+}
+#google_translate_element select.goog-te-combo:hover { border-color: var(--color-text-secondary) !important; }
+
