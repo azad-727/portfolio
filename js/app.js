@@ -692,7 +692,7 @@
             if (!gestureActive) {
                 const toast = document.createElement('div');
                 toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:var(--color-bg);color:var(--color-text);padding:16px 24px;border-radius:12px;z-index:10000;box-shadow:var(--shadow-lg);font-family:inherit;font-size:14px;transform:translateY(150px);opacity:0;transition:all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);max-width:320px;border:1px solid var(--color-border);';
-                toast.innerHTML = '<strong>✨ Magic Awaits!</strong><br><p style="margin-top:8px;color:var(--color-text-secondary);line-height:1.4;">Click the hand icon in the navbar to control this website with gestures. Draw <b>L</b> for LinkedIn, <b>R</b> for Resume, <b>C</b> for Contact, <b>P</b> for Projects!</p>';
+                toast.innerHTML = '<strong>✨ Magic Awaits!</strong><br><p style="margin-top:8px;color:var(--color-text-secondary);line-height:1.4;">Click the hand icon in the navbar to control this website with gestures.</p>';
                 document.body.appendChild(toast);
                 
                 // Show toast
