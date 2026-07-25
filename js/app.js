@@ -336,7 +336,6 @@
 
     // ---- GESTURE CONTROL (MediaPipe Hands) ----
     let gestureActive = false;
-    let drawModeActive = false;
     let videoStream = null;
     let mpHands = null;
     let mpCamera = null;
@@ -345,10 +344,6 @@
     let targetScrollVelocity = 0;
     let currentScrollVelocity = 0;
     let lastThemeToggle = 0;
-
-    // EMA Smoothing Variables
-    const EMA_ALPHA = 0.3; // Lower = smoother but more delay
-    let smoothedLandmarks = null;
 
     function smoothScrollLoop() {
         if (targetScrollVelocity !== 0 || Math.abs(currentScrollVelocity) > 0.1) {
@@ -363,11 +358,9 @@
     const letterTrailCanvas = document.getElementById('letterTrailCanvas');
     const trailCtx = letterTrailCanvas ? letterTrailCanvas.getContext('2d') : null;
     let letterPath = [];
+    let drawMode = false;          // TRUE = drawing mode, FALSE = scroll/gesture mode
+    let lastThumbToggle = 0;       // Cooldown for thumbs-up toggle
     const MIN_PATH_POINTS = 8;
-    let isDrawingStroke = false;
-    let idleTimeout = null;
-    let lastValidPos = null;
-    const MOVEMENT_THRESHOLD = 0.005;
 
     function resizeTrailCanvas() {
         if (!letterTrailCanvas) return;
@@ -393,11 +386,11 @@
             trailCtx.lineTo((1 - letterPath[i].x) * w, letterPath[i].y * h);
         }
         trailCtx.strokeStyle = '#00ccff';
-        trailCtx.lineWidth = 6;
+        trailCtx.lineWidth = 4;
         trailCtx.lineCap = 'round';
         trailCtx.lineJoin = 'round';
         trailCtx.shadowColor = '#00ccff';
-        trailCtx.shadowBlur = 16;
+        trailCtx.shadowBlur = 14;
         trailCtx.stroke();
     }
 
@@ -427,7 +420,8 @@
                 indicator = document.createElement('div');
                 indicator.id = 'draw-mode-indicator';
                 indicator.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,204,255,0.15);color:#00ccff;padding:10px 24px;border-radius:30px;z-index:10001;font-family:inherit;font-size:14px;font-weight:600;text-align:center;border:1.5px solid #00ccff;backdrop-filter:blur(8px);letter-spacing:1px;animation:pulse-draw 1.5s infinite;';
-                indicator.innerHTML = '✍️ DRAW MODE ACTIVE — Trace L, R, C, or P with your index finger';
+                indicator.innerHTML = '✍️ DRAW MODE — trace a letter (👍 to recognize, ✊ to cancel)';
+                // Add pulse animation
                 const style = document.createElement('style');
                 style.id = 'draw-mode-style';
                 style.textContent = '@keyframes pulse-draw{0%,100%{box-shadow:0 0 8px rgba(0,204,255,0.3)}50%{box-shadow:0 0 20px rgba(0,204,255,0.6)}}';
@@ -441,18 +435,38 @@
         }
     }
 
-    function finishDrawing() {
-        if (letterPath.length >= MIN_PATH_POINTS) {
+    function enterDrawMode() {
+        drawMode = true;
+        letterPath = [];
+        if (letterTrailCanvas) {
+            resizeTrailCanvas();
+            letterTrailCanvas.style.display = 'block';
+        }
+        clearTrail();
+        showDrawModeIndicator(true);
+        showGestureToast('✍️ Draw Mode ON — trace L, R, C, or P', 1500);
+    }
+
+    function exitDrawMode(recognize) {
+        drawMode = false;
+        showDrawModeIndicator(false);
+
+        if (recognize && letterPath.length >= MIN_PATH_POINTS) {
             const letter = recognizeLetter(letterPath);
             if (letter) {
                 executeLetterAction(letter);
             } else {
                 showGestureToast('❓ Not recognized. Try: L, R, C, or P');
             }
+        } else if (!recognize) {
+            showGestureToast('✊ Draw cancelled', 1200);
         }
+
         letterPath = [];
-        isDrawingStroke = false;
-        setTimeout(() => { clearTrail(); }, 1200);
+        setTimeout(() => {
+            clearTrail();
+            if (letterTrailCanvas) letterTrailCanvas.style.display = 'none';
+        }, 800);
     }
 
     function recognizeLetter(path) {
@@ -487,14 +501,17 @@
 
         const topThird = norm.filter(p => p.y < 0.33);
         const botThird = norm.filter(p => p.y >= 0.66);
-        const avgXMid = norm.filter(p => p.y >= 0.33 && p.y < 0.66).reduce((s,p,_,a) => s + p.x / a.length, 0) || 0.5;
+        const avgXMid = norm.filter(p => p.y >= 0.33 && p.y < 0.66)
+            .reduce((s,p,_,a) => s + p.x / a.length, 0) || 0.5;
 
         // L: Down then right
         if (startPt.y < 0.3 && endPt.y > 0.6 && endPt.x > 0.5 &&
             dirChangesX <= 3 && dirChangesY <= 3) {
             const mid = Math.floor(norm.length / 2);
             if (Math.abs(norm[mid].y - norm[0].y) > 0.3 && 
-                Math.abs(norm[norm.length-1].x - norm[mid].x) > 0.2) return 'L';
+                Math.abs(norm[norm.length-1].x - norm[mid].x) > 0.2) {
+                return 'L';
+            }
         }
 
         // P: Down stroke + bump right at top only
@@ -502,19 +519,27 @@
             const rightTop = topThird.filter(p => p.x > 0.5).length;
             const rightBot = botThird.filter(p => p.x > 0.5).length;
             if (rightTop > topThird.length * 0.2 && rightBot < botThird.length * 0.3 &&
-                !(endPt.x > 0.5 && endPt.y > 0.6)) return 'P';
+                !(endPt.x > 0.5 && endPt.y > 0.6)) {
+                return 'P';
+            }
         }
 
         // R: Like P but ends bottom-right (has a leg)
         if (startPt.y < 0.35 && dirChangesX >= 1) {
             const rightTop = topThird.filter(p => p.x > 0.5).length;
-            if (rightTop > topThird.length * 0.2 && endPt.x > 0.5 && endPt.y > 0.6) return 'R';
+            if (rightTop > topThird.length * 0.2 && endPt.x > 0.5 && endPt.y > 0.6) {
+                return 'R';
+            }
         }
 
         // C: Arc — starts right, curves left, ends right
-        if (dirChangesX >= 1 && dirChangesY <= 5 && startPt.x > 0.4 && avgXMid < 0.5 && endPt.x > 0.3) {
-            if (norm.filter(p => p.x < 0.4).length > norm.length * 0.2) return 'C';
+        if (dirChangesX >= 1 && dirChangesY <= 5 &&
+            startPt.x > 0.4 && avgXMid < 0.5 && endPt.x > 0.3) {
+            if (norm.filter(p => p.x < 0.4).length > norm.length * 0.2) {
+                return 'C';
+            }
         }
+
         return null;
     }
 
@@ -530,8 +555,9 @@
 
         showGestureToast(action.label);
         setTimeout(() => {
-            if (action.url) window.open(action.url, '_blank');
-            else if (action.section) {
+            if (action.url) {
+                window.open(action.url, '_blank');
+            } else if (action.section) {
                 const el = document.getElementById(action.section);
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
             }
@@ -555,191 +581,163 @@
     }
 
     function processHandResults(results) {
-        if (!gestureActive && !drawModeActive) return;
+        if (!gestureActive) return;
 
         if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-            const rawLandmarks = results.multiHandLandmarks[0];
+            const lm = results.multiHandLandmarks[0];
 
-            // Apply EMA Smoothing to landmarks
-            if (!smoothedLandmarks) {
-                smoothedLandmarks = JSON.parse(JSON.stringify(rawLandmarks));
-            } else {
-                for (let i = 0; i < rawLandmarks.length; i++) {
-                    smoothedLandmarks[i].x = EMA_ALPHA * rawLandmarks[i].x + (1 - EMA_ALPHA) * smoothedLandmarks[i].x;
-                    smoothedLandmarks[i].y = EMA_ALPHA * rawLandmarks[i].y + (1 - EMA_ALPHA) * smoothedLandmarks[i].y;
-                    smoothedLandmarks[i].z = EMA_ALPHA * rawLandmarks[i].z + (1 - EMA_ALPHA) * smoothedLandmarks[i].z;
-                }
-            }
-
-            const lm = smoothedLandmarks;
+            const isThumbUp = mpGetDist(lm[4], lm[0]) > mpGetDist(lm[3], lm[0]) * 1.1;
             const isIndexUp = isFingerExtended(lm, 8, 6, 5);
             const isMiddleUp = isFingerExtended(lm, 12, 10, 9);
             const isRingUp = isFingerExtended(lm, 16, 14, 13);
             const isPinkyUp = isFingerExtended(lm, 20, 18, 17);
 
-            // ====== DRAW MODE LOGIC ======
-            if (drawModeActive) {
-                if (isIndexUp && !isMiddleUp && !isRingUp && !isPinkyUp) {
-                    const tip = lm[8];
-                    if (!lastValidPos || mpGetDist(lastValidPos, tip) > MOVEMENT_THRESHOLD) {
-                        isDrawingStroke = true;
-                        letterPath.push({ x: tip.x, y: tip.y });
-                        lastValidPos = { x: tip.x, y: tip.y };
-                        drawTrail();
-                        if (idleTimeout) clearTimeout(idleTimeout);
-                        idleTimeout = setTimeout(() => {
-                            if (isDrawingStroke) finishDrawing();
-                        }, 1000); // 1 second of stillness triggers recognition
+            const allFingersClosed = !isIndexUp && !isMiddleUp && !isRingUp && !isPinkyUp;
+
+            // ====== THUMBS UP = TOGGLE DRAW MODE ======
+            if (isThumbUp && allFingersClosed) {
+                const now = Date.now();
+                if (now - lastThumbToggle > 2000) {  // 2 second cooldown
+                    lastThumbToggle = now;
+                    if (!drawMode) {
+                        enterDrawMode();
+                    } else {
+                        // Thumbs up while in draw mode = recognize & exit
+                        exitDrawMode(true);
                     }
                 }
+                targetScrollVelocity = 0;
                 return;
             }
 
-            // ====== SCROLL MODE LOGIC ======
-            if (gestureActive) {
-                // Only index → Scroll Down
-                if (isIndexUp && !isMiddleUp && !isRingUp && !isPinkyUp) {
-                    targetScrollVelocity = 15;
+            // ====== DRAW MODE: Index finger traces letters ======
+            if (drawMode) {
+                // Closed fist (no thumb) = cancel draw
+                if (!isThumbUp && allFingersClosed) {
+                    exitDrawMode(false);
+                    return;
                 }
-                // Peace sign → Scroll Up
-                else if (isIndexUp && isMiddleUp && !isRingUp && !isPinkyUp) {
-                    targetScrollVelocity = -15;
+
+                // Index finger up = draw
+                if (isIndexUp) {
+                    letterPath.push({ x: lm[8].x, y: lm[8].y });
+                    drawTrail();
                 }
-                // Three fingers → Toggle Theme
-                else if (isIndexUp && isMiddleUp && isRingUp && !isPinkyUp) {
-                    targetScrollVelocity = 0;
-                    const now = Date.now();
-                    if (now - lastThemeToggle > 2000) {
-                        const root = document.documentElement;
-                        const newTheme = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-                        root.setAttribute('data-theme', newTheme);
-                        lastThemeToggle = now;
-                    }
-                }
-                // Stop
-                else {
-                    targetScrollVelocity = 0;
+                // Ignore all other gestures in draw mode
+                targetScrollVelocity = 0;
+                return;
+            }
+
+            // ====== NORMAL MODE: Scroll & Theme gestures ======
+            // Only index → Scroll Down
+            if (isIndexUp && !isMiddleUp && !isRingUp && !isPinkyUp) {
+                targetScrollVelocity = 15;
+            }
+            // Peace sign → Scroll Up
+            else if (isIndexUp && isMiddleUp && !isRingUp && !isPinkyUp) {
+                targetScrollVelocity = -15;
+            }
+            // Three fingers → Toggle Theme
+            else if (isIndexUp && isMiddleUp && isRingUp && !isPinkyUp) {
+                targetScrollVelocity = 0;
+                const now = Date.now();
+                if (now - lastThemeToggle > 2000) {
+                    const root = document.documentElement;
+                    const newTheme = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                    root.setAttribute('data-theme', newTheme);
+                    lastThemeToggle = now;
                 }
             }
+            // Everything else → Stop
+            else {
+                targetScrollVelocity = 0;
+            }
         } else {
-            smoothedLandmarks = null;
             targetScrollVelocity = 0;
         }
     }
 
     // ---- MEDIAPIPE INITIALIZATION ----
-    async function startCamera() {
-        try {
-            const video = $('#gestureVideo');
-            if (!video) throw new Error('Video element not found');
-
-            if (!videoStream) {
-                videoStream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } }
-                });
-                video.srcObject = videoStream;
-                video.setAttribute('autoplay', '');
-                video.setAttribute('muted', '');
-                video.setAttribute('playsinline', '');
-                await video.play();
-            }
-
-            if (!mpHands) {
-                mpHands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/${file}` });
-                mpHands.setOptions({
-                    maxNumHands: 1,
-                    modelComplexity: 0,
-                    minDetectionConfidence: 0.6,
-                    minTrackingConfidence: 0.5
-                });
-                mpHands.onResults(processHandResults);
-            }
-
-            if (!mpCamera) {
-                mpCamera = new Camera(video, {
-                    onFrame: async () => {
-                        if ((gestureActive || drawModeActive) && mpHands) {
-                            await mpHands.send({ image: video });
-                        }
-                    },
-                    width: 320,
-                    height: 240
-                });
-                await mpCamera.start();
-            }
-            return true;
-        } catch (err) {
-            console.warn('Camera failed:', err);
-            alert('Could not start camera. Check permissions or ensure HTTPS.');
-            return false;
-        }
-    }
-
-    function stopCamera() {
-        if (mpCamera) { mpCamera.stop(); mpCamera = null; }
-        if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
-        smoothedLandmarks = null;
-    }
-
     async function initGestureControl() {
-        const gestureToggle = document.getElementById('gestureToggle');
-        const drawToggle = document.getElementById('drawToggle');
-        if (!gestureToggle || !drawToggle) return;
+        if (!gestureToggle) return;
 
         gestureToggle.addEventListener('click', async () => {
-            if (drawModeActive) drawToggle.click(); // Turn off draw mode if on
-            
             gestureActive = !gestureActive;
             gestureToggle.classList.toggle('active', gestureActive);
 
             if (gestureActive) {
                 if (gestureOverlay) gestureOverlay.style.display = 'block';
-                document.getElementById('gestureInfoText').innerHTML = '<p>☝️ Down | ✌️ Up | 3️⃣ Theme</p>';
                 const btnOriginalText = gestureToggle.innerHTML;
                 gestureToggle.innerHTML = '<span style="font-size:12px;">Loading...</span>';
-                
-                const success = await startCamera();
-                if (!success) {
+
+                try {
+                    const video = $('#gestureVideo');
+                    if (!video) throw new Error('Video element not found');
+
+                    // Request camera
+                    videoStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } }
+                    });
+                    video.srcObject = videoStream;
+                    video.setAttribute('autoplay', '');
+                    video.setAttribute('muted', '');
+                    video.setAttribute('playsinline', '');
+                    await video.play();
+
+                    // Initialize MediaPipe Hands (only once)
+                    if (!mpHands) {
+                        mpHands = new Hands({
+                            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/${file}`
+                        });
+                        mpHands.setOptions({
+                            maxNumHands: 1,
+                            modelComplexity: 0,   // 0 = lite (fastest, works on mobile)
+                            minDetectionConfidence: 0.6,
+                            minTrackingConfidence: 0.5
+                        });
+                        mpHands.onResults(processHandResults);
+                    }
+
+                    // Start camera loop
+                    mpCamera = new Camera(video, {
+                        onFrame: async () => {
+                            if (gestureActive && mpHands) {
+                                await mpHands.send({ image: video });
+                            }
+                        },
+                        width: 320,
+                        height: 240
+                    });
+                    await mpCamera.start();
+
+                    gestureToggle.innerHTML = btnOriginalText;
+                    console.log('Gesture control activated (MediaPipe).');
+
+                } catch (err) {
+                    console.warn('Camera access denied or MediaPipe failed:', err);
+                    alert('Could not start gesture control. Check camera permissions or ensure you are on HTTPS.');
                     gestureActive = false;
                     gestureToggle.classList.remove('active');
+                    gestureToggle.innerHTML = btnOriginalText;
                     if (gestureOverlay) gestureOverlay.style.display = 'none';
                 }
-                gestureToggle.innerHTML = btnOriginalText;
             } else {
+                // Deactivate
                 if (gestureOverlay) gestureOverlay.style.display = 'none';
-                if (!drawModeActive) stopCamera();
-            }
-        });
-
-        drawToggle.addEventListener('click', async () => {
-            if (gestureActive) gestureToggle.click(); // Turn off scroll mode if on
-
-            drawModeActive = !drawModeActive;
-            drawToggle.classList.toggle('active', drawModeActive);
-
-            if (drawModeActive) {
-                if (letterTrailCanvas) {
-                    resizeTrailCanvas();
-                    letterTrailCanvas.style.display = 'block';
-                }
-                const btnOriginalText = drawToggle.innerHTML;
-                drawToggle.innerHTML = '<span style="font-size:12px;">Loading...</span>';
-                
-                const success = await startCamera();
-                if (success) {
-                    showDrawModeIndicator(true);
-                } else {
-                    drawModeActive = false;
-                    drawToggle.classList.remove('active');
-                    if (letterTrailCanvas) letterTrailCanvas.style.display = 'none';
-                }
-                drawToggle.innerHTML = btnOriginalText;
-            } else {
                 if (letterTrailCanvas) letterTrailCanvas.style.display = 'none';
-                showDrawModeIndicator(false);
+                if (mpCamera) {
+                    mpCamera.stop();
+                    mpCamera = null;
+                }
+                if (videoStream) {
+                    videoStream.getTracks().forEach(track => track.stop());
+                    videoStream = null;
+                }
                 clearTrail();
+                drawMode = false;
                 letterPath = [];
-                if (!gestureActive) stopCamera();
+                showDrawModeIndicator(false);
+                console.log('Gesture control deactivated.');
             }
         });
     }
@@ -812,7 +810,123 @@
         setTimeout(typeWriter, 400);
     }
 
+    // ---- MULTILINGUAL & IP GEOLOCATION ----
+    // Translations are now loaded from js/i18n.js (window.translations)
+    
+    const countryToLang = {
+        'IN': 'hi',
+        'CN': 'zh',
+        'ES': 'es', 'MX': 'es', 'AR': 'es',
+        'FR': 'fr',
+        'SA': 'ar', 'AE': 'ar', 'EG': 'ar',
+        'BD': 'bn',
+        'BR': 'pt', 'PT': 'pt',
+        'RU': 'ru',
+        'ID': 'id',
+        'PK': 'ur',
+        'DE': 'de',
+        'US': 'en', 'GB': 'en', 'AU': 'en'
+    };
 
+    let currentLang = localStorage.getItem('azadLang') || 'en';
+
+    function applyLanguage(lang) {
+        currentLang = lang;
+        localStorage.setItem('azadLang', lang);
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (window.translations && window.translations[lang] && window.translations[lang][key]) {
+                if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                    el.placeholder = window.translations[lang][key];
+                } else {
+                    el.innerText = window.translations[lang][key];
+                }
+            } else if (window.translations && window.translations['en'][key]) {
+                if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                    el.placeholder = window.translations['en'][key];
+                } else {
+                    el.innerText = window.translations['en'][key];
+                }
+            }
+        });
+        
+        const langModal = document.getElementById('langModal');
+        if (langModal) {
+            langModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+
+    async function initMultilingual() {
+        window.applyLanguage = applyLanguage;
+        applyLanguage(currentLang);
+        
+        const langToggle = document.getElementById('langToggle');
+        if (langToggle) {
+            langToggle.addEventListener('click', () => {
+                showLangModal(currentLang);
+            });
+        }
+
+        // On first load without preference
+        if (!localStorage.getItem('azadLang')) {
+            try {
+                const res = await fetch('https://ipapi.co/json/');
+                const data = await res.json();
+                const localLang = countryToLang[data.country_code];
+                showLangModal(localLang || 'en');
+            } catch (err) {
+                console.error("Geoloc error", err);
+                showLangModal('en');
+            }
+        }
+    }
+
+    function showLangModal(suggestedLocalLang) {
+        const langModal = document.getElementById('langModal');
+        const optionsContainer = document.getElementById('langOptionsContainer');
+        if (!langModal || !optionsContainer) return;
+
+        const langMap = {
+            'en': 'English (Global)',
+            'zh': 'Mandarin Chinese (中文)',
+            'hi': 'Hindi (हिन्दी)',
+            'es': 'Spanish (Español)',
+            'ar': 'Standard Arabic (العربية)',
+            'fr': 'French (Français)',
+            'bn': 'Bengali (বাংলা)',
+            'pt': 'Portuguese (Português)',
+            'ru': 'Russian (Русский)',
+            'id': 'Indonesian (Bahasa Indonesia)',
+            'ur': 'Urdu (اردو)',
+            'de': 'German (Deutsch)'
+        };
+
+        let optionsHTML = `<button class="lang-btn ${currentLang === 'en' ? 'active' : ''}" onclick="applyLanguage('en')">${langMap['en']}</button>`;
+        
+        if (suggestedLocalLang && suggestedLocalLang !== 'en' && langMap[suggestedLocalLang]) {
+            optionsHTML += `<button class="lang-btn ${currentLang === suggestedLocalLang ? 'active' : ''}" onclick="applyLanguage('${suggestedLocalLang}')">${langMap[suggestedLocalLang]} (Suggested)</button>`;
+        } else {
+            // Default suggestions if location fails or is EN
+            optionsHTML += `<button class="lang-btn ${currentLang === 'hi' ? 'active' : ''}" onclick="applyLanguage('hi')">${langMap['hi']}</button>`;
+            optionsHTML += `<button class="lang-btn ${currentLang === 'zh' ? 'active' : ''}" onclick="applyLanguage('zh')">${langMap['zh']}</button>`;
+            optionsHTML += `<button class="lang-btn ${currentLang === 'es' ? 'active' : ''}" onclick="applyLanguage('es')">${langMap['es']}</button>`;
+        }
+
+        // Add a "Show All" toggle or just list them all? Let's list a few and have a "More" or just list all.
+        // For simplicity, let's list all 12 so they can pick any.
+        optionsHTML += '<div style="margin: 16px 0; border-top: 1px solid var(--color-border); padding-top: 16px; font-size: 12px; color: var(--color-text-muted);">All Languages</div>';
+        
+        for (const [code, name] of Object.entries(langMap)) {
+            if (code !== 'en' && code !== suggestedLocalLang) {
+                optionsHTML += `<button class="lang-btn ${currentLang === code ? 'active' : ''}" onclick="applyLanguage('${code}')">${name}</button>`;
+            }
+        }
+        
+        optionsContainer.innerHTML = optionsHTML;
+        langModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
 
     // ---- MANUAL CONTROLS ----
     function initManualControls() {
@@ -922,6 +1036,7 @@
         initContactForm();
         initGestureControl();
         initKeyboardNav();
+        initMultilingual();
         initManualControls();
         initVoiceAssistant();
 
