@@ -383,6 +383,10 @@
             const isRingUp = isFingerExtended(lm, 16, 14, 13);
             const isPinkyUp = isFingerExtended(lm, 20, 18, 17);
 
+            if (window.azadParticleSystem && window.azadParticleSystem.isActive) {
+                // Pass index finger tip (lm[8]). X is mirrored from webcam.
+                window.azadParticleSystem.updateTarget(1 - lm[8].x, lm[8].y);
+            }
 
             // ====== NORMAL MODE: Scroll & Theme gestures ======
             // Only index → Scroll Down
@@ -410,6 +414,9 @@
             }
         } else {
             targetScrollVelocity = 0;
+            if (window.azadParticleSystem && window.azadParticleSystem.isActive) {
+                window.azadParticleSystem.updateTarget(null, null);
+            }
         }
     }
 
@@ -467,6 +474,7 @@
                     await mpCamera.start();
 
                     gestureToggle.innerHTML = btnOriginalText;
+                    if (window.azadParticleSystem) window.azadParticleSystem.start();
                     console.log('Gesture control activated (MediaPipe).');
 
                 } catch (err) {
@@ -476,11 +484,12 @@
                     gestureToggle.classList.remove('active');
                     gestureToggle.innerHTML = btnOriginalText;
                     if (gestureOverlay) gestureOverlay.style.display = 'none';
+                    if (window.azadParticleSystem) window.azadParticleSystem.stop();
                 }
             } else {
                 // Deactivate
                 if (gestureOverlay) gestureOverlay.style.display = 'none';
-                if (letterTrailCanvas) letterTrailCanvas.style.display = 'none';
+                if (window.azadParticleSystem) window.azadParticleSystem.stop();
                 if (mpCamera) {
                     mpCamera.stop();
                     mpCamera = null;

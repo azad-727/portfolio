@@ -21,6 +21,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
+    <!-- Interactive Particle Background -->
+    <canvas id="particleCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none;opacity:0;transition:opacity 0.5s ease;"></canvas>
     <!-- Side Mountains (Background Sketch) -->
     <div class="side-mountains side-mountains--left">
         <svg viewBox="0 0 100 1000" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
@@ -64,7 +66,7 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
             <span>GitHub</span>
         </a>
-        <a href="https://linkedin.com/in/azad-727" target="_blank" rel="noopener" class="social-link" aria-label="LinkedIn">
+        <a href="https://www.linkedin.com/in/me-azad-singh/" target="_blank" rel="noopener" class="social-link" aria-label="LinkedIn">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
             <span>LinkedIn</span>
         </a>
@@ -254,8 +256,8 @@
                 </div>
                 <div class="process-card reveal" style="transition-delay: 0.1s">
                     <div class="process-icon" style="background: rgba(0, 255, 135, 0.1); color: #00FF87;">✋</div>
-                    <h3 data-i18n="madFeat2">Computer Vision Gestures</h3>
-                    <p data-i18n="madFeat2Desc">Click the hand icon to control this site with your webcam. Point up/down to scroll smoothly, use three fingers to toggle the theme!</p>
+                    <h3 data-i18n="madFeat2">Interactive 3D Particles</h3>
+                    <p data-i18n="madFeat2Desc">Click the hand icon to activate the webcam. Watch as the 3D particle constellation reacts in real-time to your physical hand movements!</p>
                 </div>
                 <div class="process-card reveal" style="transition-delay: 0.2s">
                     <div class="process-icon" style="background: rgba(157, 78, 221, 0.1); color: #9D4EDD;">🌍</div>
@@ -355,7 +357,7 @@
                         </div>
                         <div class="project-card-links">
                             <a href="https://github.com/azad-727/Tverse" target="_blank" rel="noopener" class="project-link" data-i18n="projLink">GitHub →</a>
-                            <a href="https://thalasiknitfab.com" target="_blank" rel="noopener" class="project-link" data-i18n="projLive">Live →</a>
+                            <a href="https://www.tverse-erp.in/" target="_blank" rel="noopener" class="project-link" data-i18n="projLive">Live →</a>
                         </div>
                     </div>
                 </div>
@@ -838,6 +840,7 @@
         }
     </script>
     <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    <script src="js/particles.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
