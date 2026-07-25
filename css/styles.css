@@ -1790,6 +1790,15 @@ input, textarea {
         display: none;
     }
 
+    .navbar {
+        width: calc(100% - 16px);
+        top: 8px;
+    }
+
+    .nav-container {
+        padding: 0 12px;
+    }
+
     .nav-links,
     .nav-cta {
         display: none;
@@ -2016,7 +2025,15 @@ input, textarea {
 @keyframes blink { 50% { opacity: 0; } }
 
 /* ---- GOOGLE TRANSLATE CUSTOMIZATION ---- */
-.goog-te-banner-frame, .goog-te-banner-frame.skiptranslate, iframe.goog-te-banner-frame { display: none !important; visibility: hidden !important; }
+.goog-te-banner-frame, 
+.goog-te-banner-frame.skiptranslate, 
+iframe.goog-te-banner-frame,
+.VIpgJd-ZVi9od-aZ2wEe-wOHMyf,
+.VIpgJd-ZVi9od-ORHb-OEVmcd,
+.skiptranslate > iframe { 
+    display: none !important; 
+    visibility: hidden !important; 
+}
 body { top: 0px !important; position: static !important; }
 .goog-logo-link, .goog-te-gadget span, .goog-te-gadget-icon { display: none !important; }
 .goog-te-gadget { color: transparent !important; font-size: 0px !important; }
