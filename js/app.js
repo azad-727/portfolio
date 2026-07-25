@@ -12,7 +12,7 @@
             title: 'CivicLink',
             problem: 'Citizens couldn\'t effectively report local infrastructure issues, and authorities lacked data to prioritize effectively. Also, there was a need for a secure, scalable system that could handle geospatial data.',
             solution: 'Architected a geographically-aware microservices platform with Spring Cloud Gateway acting as a centralized HS512-signed JWT API firewall. Engineered a zero-bottleneck AWS S3 Pre-Signed URL pipeline offloading 100% of media bandwidth to the AWS edge. Implemented MongoDB 2dsphere geospatial indexing for sub-millisecond spherical radius queries.',
-            tech: ['Java', 'Spring Cloud Gateway', 'MongoDB Atlas', 'AWS S3', 'React', 'Microservices'],
+            tech: ['Java', 'Spring Boot', 'Microservices', 'React.js', 'Vite', 'Python', 'FastAPI', 'Machine Learning', 'Computer Vision', 'YOLOv8', 'NLP', 'Generative AI', 'Prompt Engineering', 'Google Gemini API', 'MongoDB', 'Neo4j', 'Docker', 'Docker Compose', 'RESTful APIs', 'API Gateway', 'JWT', 'RBAC', 'AWS S3', 'Cloud Deployments', 'System Design'],
             github: 'https://github.com/azad-727/civiclink-core'
         },
         tverse: {
@@ -27,14 +27,14 @@
             title: 'Rituals',
             problem: 'People struggle to build and maintain consistent daily routines. Most habit trackers lack intelligent insights to keep users motivated.',
             solution: 'Engineered a containerized Java 21 LTS Spring Boot backend. Designed a NoSQL schema with custom lazy-instantiation algorithm. Decoupled volatile daily states from permanent analytics. Integrated Google Gemini API for an AI contextual "Oracle" feature. Architected a Sprint Canvas chrono-engine using browser visibility APIs.',
-            tech: ['Java 21 LTS', 'Google Gemini API', 'React', 'MongoDB Atlas', 'Docker'],
+            tech: ['React', 'Vite', 'Tailwind CSS', 'Zustand', 'Recharts', 'Java', 'Spring Boot', 'MongoDB', 'Spring Security', 'JWT', 'Lombok', 'Maven'],
             github: 'https://github.com/azad-727/rituals-api'
         },
         tykkit: {
             title: 'Tykkit.fr',
             problem: 'Students miss campus events because information is scattered. Required a highly concurrent, scalable system to handle massive traffic spikes during ticket bookings.',
             solution: 'Architected a multi-tenant modular monolith for 150+ institutes enforcing campus-scoped isolation. Engineered Redis write-buffering for high-concurrency booking — atomic DECR operations return 202 ACCEPTED in milliseconds. Containerized via Docker with a Kubernetes deployment blueprint using Helm charts.',
-            tech: ['Java', 'Spring Boot', 'Redis', 'Kubernetes', 'Helm'],
+            tech: ['Java', 'Spring Boot', 'Spring Security', 'Spring Data MongoDB', 'JWT', 'WebSockets', 'STOMP', 'MongoDB', 'Redis', 'Geospatial Queries', 'JavaScript', 'React.js', 'React Router', 'React Hook Form', 'React Leaflet', 'HTML5', 'CSS3', 'Multi-Tenant Architecture', 'Write-Buffering', 'Atomic Operations', 'Fan-out on Read', 'Background Processing', 'RESTful API Design', 'Git', 'Maven', 'Vercel', 'Render'],
             github: 'https://github.com/azad-727/tykkit.fr'
         },
         quickcommerce: {
